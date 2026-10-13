@@ -25,6 +25,7 @@ public final class CustomizableHangingSignRenderer
         this.font = context.getFont();
     }
 
+    /** Rotate into the block's local frame, then render front and back text separately. */
     @Override
     public void render(CustomizableHangingSignBlockEntity sign, float partialTick, PoseStack poseStack,
             MultiBufferSource buffers, int packedLight, int packedOverlay) {
@@ -46,6 +47,7 @@ public final class CustomizableHangingSignRenderer
         poseStack.popPose();
     }
 
+    /** Offset lettering from the panel, orient it outward and honor Minecraft's text-filter preference. */
     private void renderFace(SignText text, boolean back, PoseStack poseStack,
             MultiBufferSource buffers, int packedLight) {
         poseStack.pushPose();

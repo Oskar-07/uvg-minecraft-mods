@@ -41,11 +41,13 @@ public final class ConnectingPlanterBlock extends Block {
         registerDefaultState(stateDefinition.any().setValue(CONNECTION, PlanterConnection.SINGLE));
     }
 
+    /** Minecraft uses this codec when reconstructing the block from registry data. */
     @Override
     protected MapCodec<? extends Block> codec() {
         return CODEC;
     }
 
+    /** Choose one unpaired neighbor in a stable order; existing pairs cannot accept a third planter. */
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -65,6 +67,7 @@ public final class ConnectingPlanterBlock extends Block {
         return defaultBlockState();
     }
 
+    /** Complete the reciprocal connection on the server, or return this block to SINGLE if pairing is no longer valid. */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
             @Nullable LivingEntity placer, ItemStack stack) {
@@ -88,6 +91,7 @@ public final class ConnectingPlanterBlock extends Block {
         }
     }
 
+    /** A connection is valid only while the other planter points back to this block. */
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
             LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
@@ -102,17 +106,20 @@ public final class ConnectingPlanterBlock extends Block {
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
+    /** Return bounds matching the placed orientation for outline selection and default collision handling. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return shapeFor(state.getValue(CONNECTION), false);
     }
 
+    /** Use a slightly taller pot collision volume while excluding the decorative foliage. */
     @Override
     protected VoxelShape getCollisionShape(
             BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return shapeFor(state.getValue(CONNECTION), true);
     }
 
+    /** Connected bounds extend through the shared seam; SINGLE keeps all four outer pot edges. */
     private static VoxelShape shapeFor(PlanterConnection connection, boolean collision) {
         return switch (connection) {
             case NORTH -> collision ? NORTH_COLLISION : NORTH_SHAPE;
@@ -123,6 +130,7 @@ public final class ConnectingPlanterBlock extends Block {
         };
     }
 
+    /** Transform the partner direction together with the block while leaving unpaired planters unchanged. */
     @Override
     protected BlockState rotate(BlockState state, Rotation rotation) {
         Direction direction = state.getValue(CONNECTION).direction();
@@ -131,12 +139,14 @@ public final class ConnectingPlanterBlock extends Block {
                 : state.setValue(CONNECTION, PlanterConnection.fromDirection(rotation.rotate(direction)));
     }
 
+    /** Mirror the connection using the same directional transform used for rotations. */
     @Override
     protected BlockState mirror(BlockState state, Mirror mirror) {
         Direction direction = state.getValue(CONNECTION).direction();
         return direction == null ? state : rotate(state, mirror.getRotation(direction));
     }
 
+    /** Declare the properties Minecraft serializes and uses to select blockstate model variants. */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(CONNECTION);

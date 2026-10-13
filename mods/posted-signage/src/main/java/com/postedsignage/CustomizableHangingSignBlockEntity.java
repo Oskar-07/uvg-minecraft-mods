@@ -10,11 +10,13 @@ public final class CustomizableHangingSignBlockEntity extends SignBlockEntity {
         super(PostedSignage.CUSTOMIZABLE_HANGING_SIGN_BLOCK_ENTITY.get(), pos, state);
     }
 
+    /** Limit editable text to the blank area of the CIT panel, measured in font pixels. */
     @Override
     public int getMaxTextLineWidth() {
         return 86;
     }
 
+    /** Keep vanilla editor line spacing aligned with the custom renderer's ten-pixel layout. */
     @Override
     public int getTextLineHeight() {
         return 10;

@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+/** Thin wall sign whose outward FACING determines both its supporting wall and selection bounds. */
 public final class WallSignBlock extends HorizontalDirectionalBlock {
     public static final MapCodec<WallSignBlock> CODEC = simpleCodec(WallSignBlock::new);
 
@@ -32,6 +33,7 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
+    /** Minecraft uses this codec when reconstructing the block from registry data. */
     @Override
     protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
         return CODEC;
@@ -48,6 +50,7 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
         return state.canSurvive(context.getLevel(), context.getClickedPos()) ? state : null;
     }
 
+    /** Check the sturdy wall face behind the outward-facing block. */
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
@@ -55,6 +58,7 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
         return level.getBlockState(supportPos).isFaceSturdy(level, supportPos, facing);
     }
 
+    /** Recheck support after neighbor changes and remove the block when its attachment is lost. */
     @Override
     protected BlockState updateShape(
             BlockState state,
@@ -69,6 +73,7 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
+    /** Return bounds matching the placed orientation for outline selection and default collision handling. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(FACING)) {
@@ -79,16 +84,19 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
         };
     }
 
+    /** Rotate the stored facing so structure rotations preserve the attachment orientation. */
     @Override
     protected BlockState rotate(BlockState state, Rotation rotation) {
         return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
     }
 
+    /** Convert mirroring into the appropriate facing rotation. */
     @Override
     protected BlockState mirror(BlockState state, Mirror mirror) {
         return rotate(state, mirror.getRotation(state.getValue(FACING)));
     }
 
+    /** Declare the properties Minecraft serializes and uses to select blockstate model variants. */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);

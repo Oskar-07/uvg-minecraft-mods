@@ -21,11 +21,13 @@ public enum PlanterConnection implements StringRepresentable {
         this.direction = direction;
     }
 
+    /** SINGLE has no partner direction; callers must handle null before moving to a neighbor. */
     @Nullable
     public Direction direction() {
         return direction;
     }
 
+    /** Reject vertical connections because planter pairing is limited to the horizontal plane. */
     public static PlanterConnection fromDirection(Direction direction) {
         return switch (direction) {
             case NORTH -> NORTH;
@@ -36,6 +38,7 @@ public enum PlanterConnection implements StringRepresentable {
         };
     }
 
+    /** These names must match the connection values used by the generated blockstate JSON. */
     @Override
     public String getSerializedName() {
         return serializedName;

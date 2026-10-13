@@ -51,11 +51,13 @@ public final class CustomizableHangingSignBlock extends SignBlock {
                 .setValue(WATERLOGGED, false));
     }
 
+    /** Minecraft uses this codec when reconstructing the block from registry data. */
     @Override
     protected MapCodec<? extends SignBlock> codec() {
         return CODEC;
     }
 
+    /** Preserve waterlogging and try the player's nearest horizontal wall directions. */
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -76,6 +78,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return null;
     }
 
+    /** Check the sturdy wall face behind the outward-facing block. */
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
@@ -83,6 +86,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return level.getBlockState(supportPos).isFaceSturdy(level, supportPos, facing);
     }
 
+    /** Recheck support after neighbor changes and remove the block when its attachment is lost. */
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
             LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
@@ -92,6 +96,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
+    /** Return bounds matching the placed orientation for outline selection and default collision handling. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(FACING)) {
@@ -110,11 +115,13 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return RenderShape.MODEL;
     }
 
+    /** The sign projects perpendicular to the wall, so text orientation is offset by a quarter turn. */
     @Override
     public float getYRotationDegrees(BlockState state) {
         return state.getValue(FACING).getClockWise().toYRot();
     }
 
+    /** Offset the interaction center toward the projecting board for vanilla front/back editing. */
     @Override
     public Vec3 getSignHitboxCenterPosition(BlockState state) {
         Direction facing = state.getValue(FACING);
@@ -129,6 +136,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return new CustomizableHangingSignBlockEntity(pos, state);
     }
 
+    /** Reuse vanilla sign ticking to manage the editor session for this custom block-entity type. */
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
             Level level, BlockState state, BlockEntityType<T> type) {
@@ -138,16 +146,19 @@ public final class CustomizableHangingSignBlock extends SignBlock {
                 SignBlockEntity::tick);
     }
 
+    /** Rotate the stored facing so structure rotations preserve the attachment orientation. */
     @Override
     protected BlockState rotate(BlockState state, Rotation rotation) {
         return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
     }
 
+    /** Convert mirroring into the appropriate facing rotation. */
     @Override
     protected BlockState mirror(BlockState state, Mirror mirror) {
         return rotate(state, mirror.getRotation(state.getValue(FACING)));
     }
 
+    /** Declare the properties Minecraft serializes and uses to select blockstate model variants. */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, WATERLOGGED);
