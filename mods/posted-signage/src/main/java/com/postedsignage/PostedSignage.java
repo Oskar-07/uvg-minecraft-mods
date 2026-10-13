@@ -21,6 +21,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+/** Central content registry and creative-tab ordering for signage, decorative blocks and the drinking fountain. */
 @Mod(PostedSignage.MOD_ID)
 public final class PostedSignage {
     public static final String MOD_ID = "posted_signage";
@@ -31,6 +32,33 @@ public final class PostedSignage {
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MOD_ID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MOD_ID);
+
+    public static final DeferredBlock<VerticalSlabBlock> BRICK_VERTICAL_SLAB_BLOCK = BLOCKS.register(
+            "brick_vertical_slab", () -> new VerticalSlabBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.BRICKS)));
+    public static final DeferredBlock<VerticalSlabBlock> SMOOTH_QUARTZ_VERTICAL_SLAB_BLOCK = BLOCKS.register(
+            "smooth_quartz_vertical_slab", () -> new VerticalSlabBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.SMOOTH_QUARTZ)));
+    public static final DeferredItem<BlockItem> BRICK_VERTICAL_SLAB = ITEMS.registerSimpleBlockItem("brick_vertical_slab", BRICK_VERTICAL_SLAB_BLOCK);
+    public static final DeferredItem<BlockItem> SMOOTH_QUARTZ_VERTICAL_SLAB = ITEMS.registerSimpleBlockItem("smooth_quartz_vertical_slab", SMOOTH_QUARTZ_VERTICAL_SLAB_BLOCK);
+    public static final DeferredBlock<TrashBinBlock> TRASH_BIN_BLOCK = BLOCKS.register("trash_bin", () -> new TrashBinBlock(BlockBehaviour.Properties.of().strength(2.0F).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<FacilityDoorBlock> WIDE_GLASS_DOOR_BLOCK = BLOCKS.register("wide_glass_door", () -> new FacilityDoorBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion(), 2, 3));
+    public static final DeferredBlock<FacilityDoorBlock> SHORT_GLASS_DOOR_BLOCK = BLOCKS.register("short_glass_door", () -> new FacilityDoorBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion(), 1, 2));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TrashBinBlockEntity>> TRASH_BIN_ENTITY = BLOCK_ENTITY_TYPES.register(
+            "trash_bin", () -> BlockEntityType.Builder.of(TrashBinBlockEntity::new, TRASH_BIN_BLOCK.get()).build(null));
+    public static final DeferredItem<BlockItem> TRASH_BIN = ITEMS.registerSimpleBlockItem("trash_bin", TRASH_BIN_BLOCK);
+    public static final DeferredItem<BlockItem> WIDE_GLASS_DOOR = ITEMS.registerSimpleBlockItem("wide_glass_door", WIDE_GLASS_DOOR_BLOCK);
+    public static final DeferredItem<BlockItem> SHORT_GLASS_DOOR = ITEMS.registerSimpleBlockItem("short_glass_door", SHORT_GLASS_DOOR_BLOCK);
+    public static final DeferredBlock<TextureCoverBlock> TEXTURE_COVER_BLOCK = BLOCKS.register(
+            "texture_cover", () -> new TextureCoverBlock(BlockBehaviour.Properties.of().strength(0).noCollission().noOcclusion().noLootTable()
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TextureCoverBlockEntity>> TEXTURE_COVER_ENTITY = BLOCK_ENTITY_TYPES.register(
+            "texture_cover", () -> BlockEntityType.Builder.of(TextureCoverBlockEntity::new, TEXTURE_COVER_BLOCK.get()).build(null));
+    public static final DeferredItem<TextureApplicatorItem> TEXTURE_APPLICATOR = ITEMS.register("texture_applicator", () -> new TextureApplicatorItem(new net.minecraft.world.item.Item.Properties().stacksTo(1)));
+
+    public static final DeferredBlock<DrinkingFountainBlock> DRINKING_FOUNTAIN_BLOCK = BLOCKS.register(
+            "drinking_fountain", () -> new DrinkingFountainBlock(BlockBehaviour.Properties.of()
+                    .strength(2.5F).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredItem<BlockItem> DRINKING_FOUNTAIN =
+            ITEMS.registerSimpleBlockItem("drinking_fountain", DRINKING_FOUNTAIN_BLOCK);
 
     public static final DeferredBlock<WallSignBlock> RIGHT_ARROW_SIGN_BLOCK = signBlock("right_arrow_sign");
     public static final DeferredBlock<WallSignBlock> FIRE_EXTINGUISHER_SIGN_BLOCK = signBlock("fire_extinguisher_sign");
@@ -119,7 +147,14 @@ public final class PostedSignage {
                     .withTabsBefore(CreativeModeTabs.FUNCTIONAL_BLOCKS)
                     .icon(() -> EMERGENCY_EXIT_SIGN.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
+                        output.accept(BRICK_VERTICAL_SLAB.get());
+                        output.accept(SMOOTH_QUARTZ_VERTICAL_SLAB.get());
+                        output.accept(TEXTURE_APPLICATOR.get());
+                        output.accept(TRASH_BIN.get());
+                        output.accept(WIDE_GLASS_DOOR.get());
+                        output.accept(SHORT_GLASS_DOOR.get());
                         output.accept(RIGHT_ARROW_SIGN.get());
+                        output.accept(DRINKING_FOUNTAIN.get());
                         output.accept(SANSEVIERIA_PLANTER.get());
                         output.accept(STATUE_RELIEF.get());
                         CUSTOMIZABLE_HANGING_SIGNS.values().forEach(item -> output.accept(item.get()));
@@ -132,12 +167,20 @@ public final class PostedSignage {
                     .build());
 
     public PostedSignage(IEventBus modEventBus, ModContainer modContainer) {
+        // Existing inventory items and block palettes resolve to the retained short door.
+        var oldDoor = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "glass_door");
+        var shortDoor = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "short_glass_door");
+        BLOCKS.addAlias(oldDoor, shortDoor);
+        ITEMS.addAlias(oldDoor, shortDoor);
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
+        Hydration.EFFECTS.register(modEventBus);
+        modEventBus.addListener(HydrationPayload::register);
     }
 
+    /** Keep all thin wall signs consistent in hardness, sound and non-occluding rendering. */
     private static DeferredBlock<WallSignBlock> signBlock(String name) {
         return BLOCKS.register(name, () -> new WallSignBlock(BlockBehaviour.Properties.of()
                 .strength(0.2F)
@@ -145,6 +188,7 @@ public final class PostedSignage {
                 .noOcclusion()));
     }
 
+    /** Register every fixed restroom variant from the shared ID list. */
     private static Map<String, DeferredBlock<HangingSignBlock>> registerRestroomBlocks() {
         Map<String, DeferredBlock<HangingSignBlock>> blocks = new LinkedHashMap<>();
         for (String name : RESTROOM_SIGN_NAMES) {
@@ -156,6 +200,7 @@ public final class PostedSignage {
         return Collections.unmodifiableMap(blocks);
     }
 
+    /** Pair each registered restroom block with its inventory item using the same ID. */
     private static Map<String, DeferredItem<BlockItem>> registerRestroomItems() {
         Map<String, DeferredItem<BlockItem>> items = new LinkedHashMap<>();
         RESTROOM_SIGN_BLOCKS.forEach((name, block) ->
@@ -176,6 +221,7 @@ public final class PostedSignage {
         return Collections.unmodifiableMap(blocks);
     }
 
+    /** Reuse the block map so item IDs and creative-tab iteration cannot drift apart. */
     private static Map<String, DeferredItem<BlockItem>> registerCustomizableHangingSignItems() {
         Map<String, DeferredItem<BlockItem>> items = new LinkedHashMap<>();
         CUSTOMIZABLE_HANGING_SIGN_BLOCKS.forEach((name, block) ->
