@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -41,6 +42,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.phys.Vec3;
 
+/** Server-driven tour state machine: gathers participants, navigates, waits for the group and reports arrival. */
 public final class GuideEntity extends PathfinderMob {
     public static final double MAX_DESTINATION_DISTANCE = 250.0;
     public static final double GROUP_JOIN_DISTANCE = 16.0;
@@ -79,6 +81,7 @@ public final class GuideEntity extends PathfinderMob {
         }
     }
 
+    /** Keep movement and follow-range settings together so navigation tuning stays consistent. */
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0)
@@ -87,6 +90,7 @@ public final class GuideEntity extends PathfinderMob {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
     }
 
+    /** Door-capable ground navigation lets the guide follow campus routes through wooden doors. */
     @Override
     protected PathNavigation createNavigation(Level level) {
         GroundPathNavigation navigation = new GroundPathNavigation(this, level);
@@ -96,6 +100,7 @@ public final class GuideEntity extends PathfinderMob {
         return navigation;
     }
 
+    /** Ambient goals control looking and doors; the tour state machine chooses movement destinations. */
     @Override
     protected void registerGoals() {
         goalSelector.addGoal(0, new OpenDoorGoal(this, true));
@@ -103,6 +108,7 @@ public final class GuideEntity extends PathfinderMob {
         goalSelector.addGoal(8, new RandomLookAroundGoal(this));
     }
 
+    /** Only state and skin data are synchronized here; destination and participant bookkeeping stays server-side. */
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
@@ -111,6 +117,7 @@ public final class GuideEntity extends PathfinderMob {
         builder.define(SKIN_PROFILE, new CompoundTag());
     }
 
+    /** Ignore the off hand so one click cannot open two menus; busy guides reject new tours. */
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) {
@@ -126,6 +133,7 @@ public final class GuideEntity extends PathfinderMob {
         return InteractionResult.sidedSuccess(level().isClientSide);
     }
 
+    /** Fall back to IDLE when synchronized data contains an unknown enum ordinal. */
     public TourState getTourState() {
         int raw = entityData.get(TOUR_STATE);
         return raw >= 0 && raw < TourState.values().length ? TourState.values()[raw] : TourState.IDLE;
@@ -139,6 +147,7 @@ public final class GuideEntity extends PathfinderMob {
         return entityData.get(SKIN_ACCOUNT);
     }
 
+    /** Decode the synchronized profile, using a deterministic offline UUID when no resolved skin is available. */
     public GameProfile getSkinProfile() {
         CompoundTag encoded = entityData.get(SKIN_PROFILE);
         Optional<ResolvableProfile> decoded = ResolvableProfile.CODEC.parse(NbtOps.INSTANCE, encoded).result();
@@ -150,6 +159,7 @@ public final class GuideEntity extends PathfinderMob {
         return new GameProfile(fallbackId, account);
     }
 
+    /** Publish a fallback immediately, then resolve the account asynchronously and apply it on the server executor. */
     public void setSkinAccount(String requestedAccount) {
         String account = requestedAccount == null || requestedAccount.isBlank() ? "Steve" : requestedAccount.trim();
         if (account.length() > 16) {
@@ -169,12 +179,14 @@ public final class GuideEntity extends PathfinderMob {
         }
     }
 
+    /** Encode profile properties into synchronized NBT so clients can obtain the correct skin texture. */
     private void setResolvedSkin(GameProfile profile) {
         DataResult<Tag> result = ResolvableProfile.CODEC.encodeStart(NbtOps.INSTANCE, new ResolvableProfile(profile));
         result.result().filter(CompoundTag.class::isInstance).map(CompoundTag.class::cast)
                 .ifPresent(tag -> entityData.set(SKIN_PROFILE, tag));
     }
 
+    /** Revalidate the indexed destination against the actual block before capturing the nearby participant group. */
     public boolean startTour(ServerPlayer owner, UUID stopId) {
         if (getTourState() != TourState.IDLE || !(level() instanceof ServerLevel serverLevel)) {
             owner.displayClientMessage(Component.translatable("message.universityguide.busy"), true);
@@ -226,12 +238,14 @@ public final class GuideEntity extends PathfinderMob {
         return true;
     }
 
+    /** Require clear feet/head collision space and a sturdy floor before asking the pathfinder to reach a stop. */
     private static boolean isDestinationWalkable(ServerLevel level, BlockPos pos) {
         return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()
                 && level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty()
                 && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), net.minecraft.core.Direction.UP);
     }
 
+    /** Order matters: validate the target, wait for participants, detect arrival, then retry stalled navigation. */
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
@@ -297,15 +311,19 @@ public final class GuideEntity extends PathfinderMob {
         }
     }
 
+    /** A matching UUID prevents an old tour from targeting a replacement marker at the same coordinates. */
     @Nullable
     private TourStopBlockEntity getTargetStop(ServerLevel level) {
-        if (targetPos == null || targetStopId == null || !level.hasChunkAt(targetPos)) {
+        if (targetPos == null || targetStopId == null
+                || !level.hasChunk(SectionPos.blockToSectionCoord(targetPos.getX()),
+                        SectionPos.blockToSectionCoord(targetPos.getZ()))) {
             return null;
         }
         return level.getBlockEntity(targetPos) instanceof TourStopBlockEntity stop
                 && stop.getStopId().equals(targetStopId) ? stop : null;
     }
 
+    /** Aim at the center of the destination cell, with feet at its base rather than its vertical center. */
     private boolean requestPath() {
         return targetPos != null && getNavigation().moveTo(
                 targetPos.getX() + 0.5,
@@ -315,6 +333,7 @@ public final class GuideEntity extends PathfinderMob {
         );
     }
 
+    /** Dimension presence controls the abandonment timer; it is distinct from following distance. */
     private boolean hasParticipantInDimension(ServerLevel level) {
         for (UUID id : participants) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
@@ -325,6 +344,7 @@ public final class GuideEntity extends PathfinderMob {
         return false;
     }
 
+    /** One nearby registered participant is enough to resume the guide's movement. */
     private boolean hasNearbyParticipant(ServerLevel level) {
         double maximum = GROUP_FOLLOW_DISTANCE * GROUP_FOLLOW_DISTANCE;
         for (UUID id : participants) {
@@ -336,12 +356,14 @@ public final class GuideEntity extends PathfinderMob {
         return false;
     }
 
+    /** Stop movement before opening explanations, then release the guide for another tour. */
     private void arrive(TourStopBlockEntity stop) {
         getNavigation().stop();
         forEachParticipant(player -> TourNetwork.showArrival(player, stop.getStopName(), stop.getDescription()));
         clearTour();
     }
 
+    /** Notify the captured group before clearing the participant set and destination. */
     public void cancelTour(Component reason) {
         if (getTourState() != TourState.IDLE) {
             forEachParticipant(player -> player.displayClientMessage(reason, false));
@@ -349,6 +371,7 @@ public final class GuideEntity extends PathfinderMob {
         clearTour();
     }
 
+    /** Reset navigation and retry counters together so the next tour starts from a clean IDLE state. */
     private void clearTour() {
         getNavigation().stop();
         targetStopId = null;
@@ -360,6 +383,7 @@ public final class GuideEntity extends PathfinderMob {
         setTourState(TourState.IDLE);
     }
 
+    /** Resolve UUIDs at delivery time so disconnected players are skipped safely. */
     private void forEachParticipant(java.util.function.Consumer<ServerPlayer> action) {
         if (level().getServer() == null) {
             return;
@@ -372,16 +396,19 @@ public final class GuideEntity extends PathfinderMob {
         }
     }
 
+    /** Tour guides are map content and must not despawn when visitors leave the area. */
     @Override
     public boolean removeWhenFarAway(double distanceToClosestPlayer) {
         return false;
     }
 
+    /** Keep the NPC across chunk unloads even when no tour is active. */
     @Override
     public boolean requiresCustomPersistence() {
         return true;
     }
 
+    /** Persist skin and active-tour identity; transient pathfinder state is rebuilt after loading. */
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -400,6 +427,7 @@ public final class GuideEntity extends PathfinderMob {
         }
     }
 
+    /** Resume saved tours in WAITING so participant proximity is checked before movement restarts. */
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);

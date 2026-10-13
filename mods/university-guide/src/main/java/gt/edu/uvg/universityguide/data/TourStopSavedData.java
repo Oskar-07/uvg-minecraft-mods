@@ -17,6 +17,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 
+/** Per-dimension persistent UUID index; menus can list stops without loading every destination chunk. */
 public final class TourStopSavedData extends SavedData {
     private static final String FILE_NAME = "universityguide_stops";
     private static final Factory<TourStopSavedData> FACTORY =
@@ -24,10 +25,12 @@ public final class TourStopSavedData extends SavedData {
 
     private final Map<UUID, Entry> entries = new LinkedHashMap<>();
 
+    /** Retrieve the index from this dimension's data storage; dimensions do not share a stop map. */
     public static TourStopSavedData get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(FACTORY, FILE_NAME);
     }
 
+    /** Skip records lacking a UUID or valid position rather than constructing unusable destinations. */
     private static TourStopSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         TourStopSavedData data = new TourStopSavedData();
         ListTag list = tag.getList("Stops", Tag.TAG_COMPOUND);
@@ -45,6 +48,7 @@ public final class TourStopSavedData extends SavedData {
         return data;
     }
 
+    /** Copy mutable positions and mark data dirty only when the stored entry actually changes. */
     public void upsert(UUID id, BlockPos pos, String name) {
         Entry replacement = new Entry(id, pos.immutable(), name);
         if (!replacement.equals(entries.put(id, replacement))) {
@@ -52,26 +56,31 @@ public final class TourStopSavedData extends SavedData {
         }
     }
 
+    /** Only request a disk save when a record was present and has been removed. */
     public void remove(UUID id) {
         if (entries.remove(id) != null) {
             setDirty();
         }
     }
 
+    /** UUID lookup avoids ambiguity when different stops share a display name. */
     public Optional<Entry> find(UUID id) {
         return Optional.ofNullable(entries.get(id));
     }
 
+    /** Sort names without case sensitivity so destination pagination remains predictable. */
     public List<Entry> sortedEntries() {
         return entries.values().stream()
                 .sorted(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
+    /** Return a snapshot so callers cannot mutate the backing index. */
     public Collection<Entry> entries() {
         return List.copyOf(entries.values());
     }
 
+    /** Serialize the compact index; detailed descriptions remain in each stop's block entity. */
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();

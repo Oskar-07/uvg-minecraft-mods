@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
+/** Renders account skins on wide/slim player models and draws the animated guide indicator above the NPC. */
 public final class GuideRenderer extends MobRenderer<GuideEntity, PlayerModel<GuideEntity>> {
     private static final Component INDICATOR = Component.literal(" ! ").withStyle(ChatFormatting.BOLD);
     private static final double INDICATOR_FULL_OPACITY_DISTANCE = 64.0;
@@ -34,6 +35,7 @@ public final class GuideRenderer extends MobRenderer<GuideEntity, PlayerModel<Gu
         this.slimModel = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
     }
 
+    /** Let Minecraft's skin manager cache textures and choose fallback skins. */
     private PlayerSkin skin(GuideEntity entity) {
         return Minecraft.getInstance().getSkinManager().getInsecureSkin(entity.getSkinProfile());
     }
@@ -43,6 +45,7 @@ public final class GuideRenderer extends MobRenderer<GuideEntity, PlayerModel<Gu
         return skin(entity).texture();
     }
 
+    /** Switch arm geometry to match the resolved skin before drawing the NPC and floating indicator. */
     @Override
     public void render(GuideEntity entity, float entityYaw, float partialTicks, PoseStack poseStack,
                        MultiBufferSource buffer, int packedLight) {
@@ -52,6 +55,7 @@ public final class GuideRenderer extends MobRenderer<GuideEntity, PlayerModel<Gu
         renderIndicator(entity, partialTicks, poseStack, buffer);
     }
 
+    /** Billboard the indicator toward the camera and fade it at long distance to limit visual clutter. */
     private void renderIndicator(GuideEntity entity, float partialTick, PoseStack poseStack,
                                  MultiBufferSource buffer) {
         double distanceSquared = entityRenderDispatcher.distanceToSqr(entity);
@@ -109,6 +113,7 @@ public final class GuideRenderer extends MobRenderer<GuideEntity, PlayerModel<Gu
         poseStack.popPose();
     }
 
+    /** Pack a clamped opacity into the ARGB color expected by the font renderer. */
     private static int withAlpha(int rgb, float alpha) {
         return Mth.clamp((int)(alpha * 255.0F), 0, 255) << 24 | rgb;
     }

@@ -9,11 +9,13 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
-@EventBusSubscriber(modid = UniversityGuideMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+/** Client-only renderer registration; dedicated servers must never load the screen or renderer classes. */
+@EventBusSubscriber(modid = UniversityGuideMod.MOD_ID, value = Dist.CLIENT)
 public final class ClientModEvents {
     private ClientModEvents() {
     }
 
+    /** Bind each registered entity type to its client renderer during renderer setup. */
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModContent.GUIDE.get(), GuideRenderer::new);

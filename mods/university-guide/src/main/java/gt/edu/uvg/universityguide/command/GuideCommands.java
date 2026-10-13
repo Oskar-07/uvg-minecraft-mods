@@ -18,10 +18,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
+/** Operator command tree for spawning, finding, cancelling and removing guides or obtaining stop markers. */
 public final class GuideCommands {
     private GuideCommands() {
     }
 
+    /** The root permission gate protects every administrative subcommand. */
     public static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         dispatcher.register(Commands.literal("universityguide")
@@ -41,6 +43,7 @@ public final class GuideCommands {
                         .then(Commands.literal("give").executes(GuideCommands::giveMarker))));
     }
 
+    /** Validate the display name, initialize the skin and place the guide at the invoking player's location. */
     private static int spawnGuide(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         ServerLevel level = context.getSource().getLevel();
@@ -69,6 +72,7 @@ public final class GuideCommands {
         return 1;
     }
 
+    /** Markers are editing tools; require creative-operator access and drop the item if inventory is full. */
     private static int giveMarker(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         if (!player.canUseGameMasterBlocks()) {
@@ -83,6 +87,7 @@ public final class GuideCommands {
         return 1;
     }
 
+    /** Share target resolution while keeping cancellation distinct from permanent entity removal. */
     private static int affectGuide(CommandContext<CommandSourceStack> context, boolean remove)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -103,6 +108,7 @@ public final class GuideCommands {
         return 1;
     }
 
+    /** The nearest search is local; explicit UUID lookup is restricted to the player's current dimension. */
     @Nullable
     private static GuideEntity findGuide(ServerLevel level, ServerPlayer player, String target) {
         if (target.equalsIgnoreCase("nearest")) {
