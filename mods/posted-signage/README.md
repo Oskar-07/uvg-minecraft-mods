@@ -8,6 +8,7 @@ The restroom collection uses double-sided 3D signs that project perpendicular to
 
 ## Items
 
+- `posted_signage:drinking_fountain`
 - `posted_signage:customizable_hanging_sign`
 - `posted_signage:customizable_hanging_sign_green`
 - `posted_signage:customizable_hanging_sign_red`
@@ -59,7 +60,51 @@ The customizable signs follow the wide white CIT reference design and support di
 - The main panel remains white and the editable lettering remains dark for readability.
 - Glow ink and honeycomb retain the usual vanilla sign behavior.
 
-## Build
+## Drinking fountain and hydration (1.4.0)
+
+Install the same JAR on client and server. Obtain the fountain from the creative tab or
+`/give @s posted_signage:drinking_fountain`. Place it against two vertically adjacent solid
+wall faces, leaving two empty cells in front. It occupies a 1x2x1 space and keeps the full
+pedestal, basin and back panel. No floor support, tank or pipes are needed.
+
+Right-click the long front push bar beneath the basin to drink. A two-second water-particle
+arc and sound accompany the button press. Each player has a three-second reuse cooldown.
+Drinking adds six hydration points, two hunger points and two saturation points (vanilla
+caps apply), and extinguishes fire. Breaking either half drops one item in Survival;
+Creative removal drops none.
+
+Hydration is 0–20, shown as ten drops above the hunger/air HUD. Survival and Adventure
+players lose one point per minute of game time. At zero, dehydration applies the equivalent
+of Weakness I and Slowness I; drinking removes those penalties without removing potion
+effects. Hydration persists through saving, death and dimension changes. Creative and
+Spectator players do not lose hydration or receive penalties. This version adds no recipe
+or bottle-filling mechanic; map creators supply fountains through Creative or commands.
+
+### Development checks
+
+`gradlew.bat runGameTestServer` runs fountain/hydration tests in an isolated generated world.
+It also covers building tools, the three active facilities, player-relative texture orientation,
+exact drops, working doors, confirmed bin disposal, and legacy facility migration (24 tests total).
+The tests and their arena are excluded from the release JAR. Run `validate_assets.ps1`
+inside this project to validate packaged resources. The original asset generators and
+editable Blockbench sources remain in the separate local Posted Signage workspace.
+
+### Functional facilities
+
+- Trash bin: one block tall with nine persistent slots. Right-click to open storage.
+  Closing storage keeps its contents. To permanently discard everything, close the window,
+  empty both hands, then sneak-right-click the bin twice within five seconds. The first click
+  asks for confirmation. Opening storage or changing its contents cancels pending confirmation.
+  Breaking the bin returns undeleted contents.
+- Wide glass door (2x3): right-click any part to open/close both outer-hinged leaves.
+- Short glass door (1x2): right-click either part to open/close the single leaf.
+  Doors update collision and play metal-door sounds; their open state is saved. Interaction
+  is manual, without redstone control. The fixed CIT label is not yet editable.
+- The retired 1x3 glass door is no longer registered or listed. Old block/item IDs resolve
+  to the short door. On chunk load, obsolete third-row door cells and second-row bin cells
+  are removed without extra drops. The old editable Blockbench model is retained.
+
+### Compilation
 
 Requires a Java 21 toolchain.
 

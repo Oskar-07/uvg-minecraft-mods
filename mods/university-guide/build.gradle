@@ -179,6 +179,13 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs.add('-Xlint:deprecation')
+}
+
+// Development runs discover GameTests; keep test-only classes and structures out of releases.
+tasks.named('jar') {
+    exclude 'gt/edu/uvg/universityguide/TourStopGameTests.class'
+    exclude 'data/universityguide/structure/empty.nbt'
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

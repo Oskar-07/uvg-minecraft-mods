@@ -2,6 +2,7 @@
   "block.universityguide.tour_stop": "Parada de tour",
   "entity.universityguide.guide": "Guía universitario",
   "screen.universityguide.destinations": "Selecciona un destino",
+  "screen.universityguide.choose_hint": "Toca un lugar para empezar el recorrido",
   "screen.universityguide.no_destinations": "No hay paradas configuradas a menos de 250 bloques.",
   "screen.universityguide.page": "Página %s de %s",
   "screen.universityguide.edit_stop": "Editar parada del tour",

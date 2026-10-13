@@ -2,6 +2,7 @@
   "block.universityguide.tour_stop": "Tour Stop",
   "entity.universityguide.guide": "University Guide",
   "screen.universityguide.destinations": "Choose a destination",
+  "screen.universityguide.choose_hint": "Pick a place to start the tour",
   "screen.universityguide.no_destinations": "There are no configured stops within 250 blocks.",
   "screen.universityguide.page": "Page %s of %s",
   "screen.universityguide.edit_stop": "Edit tour stop",
