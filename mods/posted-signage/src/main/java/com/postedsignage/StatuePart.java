@@ -51,6 +51,7 @@ public enum StatuePart implements StringRepresentable {
         return row;
     }
 
+    /** Use strict lookup when the caller requires an occupied grid cell; invalid coordinates indicate a logic error. */
     public static StatuePart at(int column, int row) {
         StatuePart part = findAt(column, row);
         if (part != null) {
@@ -59,6 +60,7 @@ public enum StatuePart implements StringRepresentable {
         throw new IllegalArgumentException("No statue part at " + column + ", " + row);
     }
 
+    /** Return null for positions outside the T-shaped footprint, including its intentionally empty corners. */
     public static StatuePart findAt(int column, int row) {
         for (StatuePart part : values()) {
             if (part.column == column && part.row == row) {
@@ -68,10 +70,12 @@ public enum StatuePart implements StringRepresentable {
         return null;
     }
 
+    /** The four-cell stem spans columns 0..3, so mirroring maps each column to 3 minus itself. */
     public StatuePart mirrored() {
         return at(3 - column, row);
     }
 
+    /** Keep serialized state names stable because resource JSON and saved blockstates refer to them. */
     @Override
     public String getSerializedName() {
         return serializedName;

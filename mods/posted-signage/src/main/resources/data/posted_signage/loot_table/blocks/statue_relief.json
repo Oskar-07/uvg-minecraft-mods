@@ -13,6 +13,13 @@
                       "conditions":  [
                                          {
                                              "condition":  "minecraft:survives_explosion"
+                                         },
+                                         {
+                                             "condition":  "minecraft:block_state_property",
+                                             "block":  "posted_signage:statue_relief",
+                                             "properties":  {
+                                                                "part":  "stem_bottom_0"
+                                                            }
                                          }
                                      ]
                   }

@@ -97,7 +97,9 @@ $blockIds = @(Get-ChildItem -LiteralPath $blockstateRoot -File -Filter '*.json' 
         Sort-Object BaseName | ForEach-Object BaseName)
 
 Test-ExactAssetSet $blockstateRoot '*.json' 'blockstate' $registeredBlockIds
-Test-ExactAssetSet $itemModelRoot '*.json' 'item model' $registeredBlockIds
+# Internal surface covers have no inventory item; the applicator is a standalone item.
+$inventoryBlockIds = @($registeredBlockIds | Where-Object { $_ -ne 'texture_cover' })
+Test-ExactAssetSet $itemModelRoot '*.json' 'item model' ($inventoryBlockIds + @('texture_applicator'))
 Test-ExactAssetSet $lootRoot '*.json' 'loot table' $registeredBlockIds
 
 # Every block needs a same-named base model for its inventory representation.
@@ -129,7 +131,7 @@ foreach ($languageFile in $languageFiles) {
     }
 }
 
-$requiredTranslationKeys = @('itemGroup.posted_signage') + @(
+$requiredTranslationKeys = @('itemGroup.posted_signage', 'item.posted_signage.texture_applicator') + @(
     $registeredBlockIds | ForEach-Object { "block.posted_signage.$_" })
 foreach ($languageFile in $languageFiles) {
     if (-not $languageKeys.ContainsKey($languageFile)) {
@@ -144,7 +146,9 @@ foreach ($languageFile in $languageFiles) {
 
 foreach ($blockId in $blockIds) {
     Require-File (Join-Path $blockModelRoot "$blockId.json") "Missing block model for $blockId"
-    Require-File (Join-Path $itemModelRoot "$blockId.json") "Missing item model for $blockId"
+    if ($blockId -ne 'texture_cover') {
+        Require-File (Join-Path $itemModelRoot "$blockId.json") "Missing item model for $blockId"
+    }
     Require-File (Join-Path $lootRoot "$blockId.json") "Missing loot table for $blockId"
 
     $blockstatePath = Join-Path $blockstateRoot "$blockId.json"
@@ -157,13 +161,59 @@ foreach ($blockId in $blockIds) {
             west = 270
         }
         $expectedVariants = [ordered]@{}
-        if ($blockId -eq 'sansevieria_planter') {
+        if ($blockId -eq 'texture_cover') {
+            foreach ($facing in @('north', 'east', 'south', 'west', 'up', 'down')) {
+                $expectedVariants["facing=$facing"] = [ordered]@{ model = 'posted_signage:block/texture_cover'; rotation = 0 }
+            }
+        }
+        elseif ($blockId -eq 'drinking_fountain') {
+            foreach ($facing in $expectedRotations.Keys) {
+                foreach ($half in @('lower', 'upper')) {
+                    foreach ($active in @('false', 'true')) {
+                        $suffix = if ($half -eq 'lower' -and $active -eq 'true') { '_active' } else { '' }
+                        $expectedVariants["active=$active,facing=$facing,half=$half"] = [ordered]@{
+                            model = "posted_signage:block/drinking_fountain_$half$suffix"
+                            rotation = $expectedRotations[$facing]
+                        }
+                    }
+                }
+            }
+        }
+        elseif ($blockId -eq 'sansevieria_planter') {
             $expectedVariants['connection=single'] = [ordered]@{
                 model = 'posted_signage:block/sansevieria_planter'; rotation = 0 }
             foreach ($connection in $expectedRotations.Keys) {
                 $expectedVariants["connection=$connection"] = [ordered]@{
                     model = 'posted_signage:block/sansevieria_planter_connected'
                     rotation = $expectedRotations[$connection]
+                }
+            }
+        }
+        elseif ($blockId -in @('trash_bin','wide_glass_door','short_glass_door')) {
+            $dims = @{
+                trash_bin = @(1,1)
+                wide_glass_door = @(2,3)
+                short_glass_door = @(1,2)
+            }[$blockId]
+            foreach ($facing in $expectedRotations.Keys) {
+                for ($x = 0; $x -lt 2; $x++) {
+                    for ($y = 0; $y -lt 3; $y++) {
+                        $modelX = [Math]::Min($x, $dims[0] - 1)
+                        $modelY = [Math]::Min($y, $dims[1] - 1)
+                        $openStates = if ($blockId -eq 'trash_bin') { @('none') } else { @('false', 'true') }
+                        foreach ($open in $openStates) {
+                            $key = "facing=$facing,part_x=$x,part_y=$y"
+                            $suffix = ''
+                            if ($open -ne 'none') { $key = "facing=$facing,open=$open,part_x=$x,part_y=$y" }
+                            if ($open -eq 'true') { $suffix = '_open' }
+                            $rotation = $expectedRotations[$facing]
+                            if ($blockId -eq 'wide_glass_door' -and $open -eq 'true') { $rotation = ($rotation + 270) % 360 }
+                            $expectedVariants[$key] = [ordered]@{
+                                model = "posted_signage:block/${blockId}_part_${modelX}_${modelY}${suffix}"
+                                rotation = $rotation
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -231,7 +281,12 @@ foreach ($blockId in $blockIds) {
     if ($parsedJson.ContainsKey($lootPath)) {
         $loot = $parsedJson[$lootPath]
         $pools = @($loot.pools)
-        if ($loot.type -ne 'minecraft:block' -or $pools.Count -ne 1) {
+        if ($blockId -eq 'texture_cover') {
+            if ($loot.type -ne 'minecraft:block' -or $pools.Count -ne 0) {
+                Add-ValidationError "Internal texture covers must not drop items: $lootPath"
+            }
+        }
+        elseif ($loot.type -ne 'minecraft:block' -or $pools.Count -ne 1) {
             Add-ValidationError "Loot table must contain exactly one block pool: $lootPath"
         }
         else {
@@ -245,6 +300,25 @@ foreach ($blockId in $blockIds) {
             $conditions = @($pool.conditions | ForEach-Object condition)
             if ('minecraft:survives_explosion' -notin $conditions) {
                 Add-ValidationError "Loot table is missing survives_explosion: $lootPath"
+            }
+            if ($blockId -in @('statue_relief', 'trash_bin', 'wide_glass_door', 'short_glass_door')) {
+                $originConditions = @($pool.conditions | Where-Object condition -EQ 'minecraft:block_state_property')
+                if ($originConditions.Count -ne 1) {
+                    Add-ValidationError "Multiblock loot must be restricted to its origin: $lootPath"
+                }
+                else {
+                    $originCondition = $originConditions[0]
+                    $expectedProperties = if ($blockId -eq 'statue_relief') { @{ part = 'stem_bottom_0' } } else { @{ part_x = '0'; part_y = '0' } }
+                    if ($originCondition.block -ne "posted_signage:$blockId") {
+                        Add-ValidationError "Incorrect multiblock loot block: $lootPath"
+                    }
+                    foreach ($key in $expectedProperties.Keys) {
+                        $property = $originCondition.properties.PSObject.Properties[$key]
+                        if ($null -eq $property -or $property.Value -cne $expectedProperties[$key]) {
+                            Add-ValidationError "Incorrect origin loot property $key`: $lootPath"
+                        }
+                    }
+                }
             }
         }
     }
