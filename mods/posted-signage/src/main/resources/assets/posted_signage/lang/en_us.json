@@ -51,7 +51,17 @@
   "item.posted_signage.wide_glass_door": "Wide Glass Door",
   "block.posted_signage.short_glass_door": "Short Glass Door",
   "item.posted_signage.short_glass_door": "Short Glass Door",
-  "message.posted_signage.bin_hint": "Store items here. To discard them: close the window, empty both hands, then sneak-right-click the bin twice.",
-  "message.posted_signage.bin_confirm": "Permanently delete ALL bin contents? Sneak-right-click again with empty hands within 5 seconds to confirm.",
-  "message.posted_signage.bin_emptied": "Trash bin emptied."
+  "message.posted_signage.bin_hint": "Right-click with an item to store it. Use an empty hand to open the bin.",
+  "message.posted_signage.bin_emptied": "Trash bin emptied.",
+  "message.posted_signage.bin_full": "The trash bin is full. Remaining items stay in your hand.",
+  "screen.posted_signage.bin_empty": "Empty bin",
+  "screen.posted_signage.bin_empty_tooltip": "Permanently delete all items stored in this bin.",
+  "block.posted_signage.cit_short_door_test": "CIT Short Door (Test)",
+  "block.posted_signage.cit_wide_door_test": "CIT Wide Door (Test)",
+  "block.posted_signage.cit_glass_panel": "Connected CIT Glass",
+  "block.posted_signage.cit_door_swing": "CIT Door Leaf (Internal)",
+  "screen.posted_signage.cit_door": "Door room code and color",
+  "screen.posted_signage.room_number": "Room number",
+  "block.posted_signage.clear_short_door_test": "Clear Short Door (No Text)",
+  "block.posted_signage.clear_wide_door_test": "Clear Wide Door (No Text)"
 }

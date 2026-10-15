@@ -20,11 +20,7 @@ Los GameTests verifican la serialización de paradas y las altas, cambios y baja
 
 El JAR compilado se genera en `build/libs/`.
 
-La interfaz incluye un tema verde compartido, contadores de caracteres y paginación
-adaptada a la altura de la ventana. Los borradores del editor se conservan al redimensionar.
-La revisión visual de las tres pantallas y las pruebas multijugador siguen pendientes.
-
-Este proyecto se publica en `mods/university-guide/` del monorepo
-[`uvg-minecraft-mods`](https://github.com/jacobjuarezguerra/uvg-minecraft-mods).
-Los registros históricos de pruebas locales están en `REGISTRO_PRUEBAS.md`;
-los JAR y mundos mencionados en esos registros no forman parte del repositorio.
+La compilación local verificada se conserva en
+`releases/universityguide-1.0.0-local-tested.jar`. La versión que se desarrolló en otra
+computadora ya fue aplicada al worktree actual; sus cambios de interfaz y traducciones deben
+terminar de probarse y confirmarse antes de publicar el JAR definitivo.

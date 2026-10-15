@@ -33,7 +33,7 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
 
     public HangingSignBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(GlassSignMount.GLASS_MOUNTED, false));
     }
 
     /** Minecraft uses this codec when reconstructing the block from registry data. */
@@ -55,7 +55,7 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
             if (direction.getAxis().isHorizontal()) {
                 state = state.setValue(FACING, direction.getOpposite());
                 if (state.canSurvive(level, pos)) {
-                    return state;
+                    return GlassSignMount.state(state,level,pos,state.getValue(FACING));
                 }
             }
         }
@@ -68,7 +68,7 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
         BlockPos supportPos = pos.relative(facing.getOpposite());
-        return level.getBlockState(supportPos).isFaceSturdy(level, supportPos, facing);
+        return GlassSignMount.supported(level,pos,facing);
     }
 
     /** Recheck support after neighbor changes and remove the block when its attachment is lost. */
@@ -83,18 +83,19 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
         if (direction == state.getValue(FACING).getOpposite() && !state.canSurvive(level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+        return GlassSignMount.state(super.updateShape(state, direction, neighborState, level, pos, neighborPos),level,pos,state.getValue(FACING));
     }
 
     /** Return bounds matching the placed orientation for outline selection and default collision handling. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return switch (state.getValue(FACING)) {
+        VoxelShape shape = switch (state.getValue(FACING)) {
             case SOUTH -> SOUTH_SHAPE;
             case WEST -> WEST_SHAPE;
             case EAST -> EAST_SHAPE;
             default -> NORTH_SHAPE;
         };
+        return GlassSignMount.shape(shape,state,state.getValue(FACING));
     }
 
     /** Rotate the stored facing so structure rotations preserve the attachment orientation. */
@@ -112,6 +113,6 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
     /** Declare the properties Minecraft serializes and uses to select blockstate model variants. */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, GlassSignMount.GLASS_MOUNTED);
     }
 }

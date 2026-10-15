@@ -85,18 +85,19 @@ or bottle-filling mechanic; map creators supply fountains through Creative or co
 `gradlew.bat runGameTestServer` runs fountain/hydration tests in an isolated generated world.
 It also covers building tools, the three active facilities, player-relative texture orientation,
 exact drops, working doors, confirmed bin disposal, and legacy facility migration (24 tests total).
-The tests and their arena are excluded from the release JAR. Run `validate_assets.ps1`
-inside this project to validate packaged resources. The original asset generators and
-editable Blockbench sources remain in the separate local Posted Signage workspace.
+The tests and their arena are excluded from the release JAR. Workspace asset generators and
+validation live two directories above this Gradle project.
 
 ### Functional facilities
 
-- Trash bin: one block tall with nine persistent slots. Right-click to open storage.
-  Closing storage keeps its contents. To permanently discard everything, close the window,
-  empty both hands, then sneak-right-click the bin twice within five seconds. The first click
-  asks for confirmation. Opening storage or changing its contents cancels pending confirmation.
-  Breaking the bin returns undeleted contents.
-- Wide glass door (2x3): right-click any part to open/close both outer-hinged leaves.
+- Trash bin: one block tall with nine persistent slots. Right-click while holding an item
+  to deposit the held stack; any overflow stays in your hand. Right-click with an empty main
+  hand to open storage. The **Empty bin** button permanently deletes only the stored contents
+  with one click; your inventory and cursor item are preserved. Items can be recovered normally
+  or with shift-click before emptying. Closing storage keeps its contents; breaking the bin
+  returns undeleted items. The previous crouch-double-click disposal gesture is removed.
+- Wide glass door (2x3): right-click any part to rotate the complete panel open/closed.
+  Its occupied footprint moves with the panel; the destination cells must be clear.
 - Short glass door (1x2): right-click either part to open/close the single leaf.
   Doors update collision and play metal-door sounds; their open state is saved. Interaction
   is manual, without redstone control. The fixed CIT label is not yet editable.

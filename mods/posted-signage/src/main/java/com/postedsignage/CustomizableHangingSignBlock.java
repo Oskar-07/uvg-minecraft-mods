@@ -34,6 +34,31 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * independently editable vanilla sign text.
  */
 public final class CustomizableHangingSignBlock extends SignBlock {
+    @Override public void openTextEdit(net.minecraft.world.entity.player.Player player,
+            SignBlockEntity sign, boolean front) {
+        if (CitAccess.canEditAt(player, sign.getBlockPos())) super.openTextEdit(player, sign, front);
+    }
+    @Override protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level,
+            BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
+        if (!CitAccess.canEditAt(player, pos)) return net.minecraft.world.InteractionResult.SUCCESS;
+        return super.useWithoutItem(state, level, pos, player, hit);
+    }
+    @Override protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack,
+            BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
+            net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        if (!CitAccess.canEditAt(player, pos)) return net.minecraft.world.ItemInteractionResult.SUCCESS;
+        return super.useItemOn(stack, state, level, pos, player, hand, hit);
+    }
+    @Override public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+            net.minecraft.world.entity.LivingEntity placer, net.minecraft.world.item.ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (placer instanceof net.minecraft.server.level.ServerPlayer player) {
+            player.server.tell(new net.minecraft.server.TickTask(player.server.getTickCount() + 1, () -> {
+                if (level.getBlockEntity(pos) instanceof CustomizableHangingSignBlockEntity sign)
+                    openTextEdit(player, sign, true);
+            }));
+        }
+    }
     public static final MapCodec<CustomizableHangingSignBlock> CODEC =
             simpleCodec(CustomizableHangingSignBlock::new);
     public static final net.minecraft.world.level.block.state.properties.DirectionProperty FACING =
@@ -47,7 +72,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
     public CustomizableHangingSignBlock(Properties properties) {
         super(WoodType.OAK, properties);
         registerDefaultState(stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
+                .setValue(FACING, Direction.NORTH).setValue(GlassSignMount.GLASS_MOUNTED, false)
                 .setValue(WATERLOGGED, false));
     }
 
@@ -71,7 +96,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
                         .setValue(FACING, direction.getOpposite())
                         .setValue(WATERLOGGED, waterlogged);
                 if (state.canSurvive(level, pos)) {
-                    return state;
+                    return GlassSignMount.state(state,level,pos,state.getValue(FACING));
                 }
             }
         }
@@ -83,7 +108,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
         BlockPos supportPos = pos.relative(facing.getOpposite());
-        return level.getBlockState(supportPos).isFaceSturdy(level, supportPos, facing);
+        return GlassSignMount.supported(level,pos,facing);
     }
 
     /** Recheck support after neighbor changes and remove the block when its attachment is lost. */
@@ -93,18 +118,19 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         if (direction == state.getValue(FACING).getOpposite() && !state.canSurvive(level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+        return GlassSignMount.state(super.updateShape(state, direction, neighborState, level, pos, neighborPos),level,pos,state.getValue(FACING));
     }
 
     /** Return bounds matching the placed orientation for outline selection and default collision handling. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return switch (state.getValue(FACING)) {
+        VoxelShape shape = switch (state.getValue(FACING)) {
             case SOUTH -> SOUTH_SHAPE;
             case WEST -> WEST_SHAPE;
             case EAST -> EAST_SHAPE;
             default -> NORTH_SHAPE;
         };
+        return GlassSignMount.shape(shape,state,state.getValue(FACING));
     }
 
     @Override
@@ -128,7 +154,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return Vec3.atCenterOf(BlockPos.ZERO).add(
                 facing.getStepX() * 0.12,
                 0.0,
-                facing.getStepZ() * 0.12);
+                facing.getStepZ() * 0.12).add(GlassSignMount.offset(state,facing));
     }
 
     @Override
@@ -161,6 +187,6 @@ public final class CustomizableHangingSignBlock extends SignBlock {
     /** Declare the properties Minecraft serializes and uses to select blockstate model variants. */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, WATERLOGGED);
+        builder.add(FACING, WATERLOGGED, GlassSignMount.GLASS_MOUNTED);
     }
 }

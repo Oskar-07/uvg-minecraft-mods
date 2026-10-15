@@ -38,7 +38,8 @@ public final class CustomizableHangingSignRenderer
         };
 
         poseStack.pushPose();
-        poseStack.translate(0.5, 0.5, 0.5);
+        var mount=com.postedsignage.GlassSignMount.offset(sign.getBlockState(),facing);
+        poseStack.translate(0.5+mount.x, 0.5, 0.5+mount.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
 
         renderFace(sign.getFrontText(), false, poseStack, buffers, packedLight);

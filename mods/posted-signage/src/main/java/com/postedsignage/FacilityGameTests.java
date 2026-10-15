@@ -26,29 +26,42 @@ public final class FacilityGameTests {
     private FacilityGameTests() {
     }
 
-    @GameTest(template = "empty", timeoutTicks = 160)
-    public static void binConfirmationExpiresAndBelongsToOnePlayer(GameTestHelper helper) {
+    @GameTest(template = "empty")
+    public static void binRightClickStoresHeldStackAndPreservesOverflow(GameTestHelper helper) {
         var level = helper.getLevel();
         BlockPos pos = helper.absolutePos(START);
-        level.setBlockAndUpdate(pos, PostedSignage.TRASH_BIN_BLOCK.get().defaultBlockState());
+        var block = PostedSignage.TRASH_BIN_BLOCK.get();
+        var state = block.defaultBlockState();
+        level.setBlockAndUpdate(pos, state);
         var bin = (TrashBinBlockEntity) level.getBlockEntity(pos);
-        bin.setItem(0, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 3));
-        var first = helper.makeMockPlayer(GameType.SURVIVAL);
-        var second = helper.makeMockPlayer(GameType.SURVIVAL);
-        for (var player : new net.minecraft.world.entity.player.Player[] {first, second}) {
-            player.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 2);
-            player.setShiftKeyDown(true);
-        }
-        helper.assertTrue(!bin.confirmEmpty(first), "First player starts confirmation");
-        helper.assertTrue(!bin.confirmEmpty(second) && !bin.isEmpty(), "Another player cannot confirm the first player's request");
-        helper.runAfterDelay(102, () -> {
-            helper.assertTrue(!bin.confirmEmpty(second) && !bin.isEmpty(), "Expired confirmation does not delete items");
-            second.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.STICK));
-            helper.assertTrue(!bin.confirmEmpty(second) && !bin.isEmpty(), "Held items cannot trigger disposal");
-            second.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-            helper.assertTrue(bin.confirmEmpty(second) && bin.isEmpty(), "New confirmation permits explicit disposal");
-            helper.succeed();
-        });
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + 2);
+        var hit = new BlockHitResult(pos.getCenter(), Direction.NORTH, pos, false);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 12));
+        block.useItemOn(player.getMainHandItem(), state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(player.getMainHandItem().isEmpty() && bin.getItem(0).getCount() == 12, "Right-click stores entire held stack");
+        for (int i = 0; i < 9; i++) bin.setItem(i, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 64));
+        bin.getItem(0).setCount(60);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 12));
+        block.useItemOn(player.getMainHandItem(), state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(bin.getItem(0).getCount() == 64 && player.getMainHandItem().getCount() == 8, "Partial deposit leaves overflow in hand");
+        block.useItemOn(player.getMainHandItem(), state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(player.getMainHandItem().getCount() == 8, "Full bin never deletes held items");
+        bin.clearContent();
+        ItemStack named = new ItemStack(net.minecraft.world.item.Items.DIAMOND, 3);
+        named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Keep my name"));
+        bin.setItem(0, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 10));
+        player.setItemInHand(InteractionHand.OFF_HAND, named);
+        helper.assertTrue(bin.storeHeldItems(player, InteractionHand.OFF_HAND) == 3, "Offhand can deposit");
+        helper.assertTrue(bin.getItem(0).getCount() == 10 && bin.getItem(1).getCount() == 3
+                && bin.getItem(1).has(net.minecraft.core.component.DataComponents.CUSTOM_NAME), "Different components stay separate and intact");
+        bin.clearContent();
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.DIAMOND_SWORD));
+        helper.assertTrue(bin.storeHeldItems(player, InteractionHand.MAIN_HAND) == 1 && bin.getItem(0).getCount() == 1, "Unstackable items stored safely");
+        player.setPos(pos.getX() + 100, pos.getY(), pos.getZ());
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.STONE, 8));
+        helper.assertTrue(bin.storeHeldItems(player, InteractionHand.MAIN_HAND) == 0 && player.getMainHandItem().getCount() == 8, "Distant deposit is rejected");
+        helper.succeed();
     }
 
     @GameTest(template = "empty")
@@ -97,7 +110,41 @@ public final class FacilityGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void binStoresConfirmsAndReturnsContentsOnBreak(GameTestHelper helper) {
+    public static void binMenuTransfersAndRejectsUnauthorizedPlayers(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos pos = helper.absolutePos(START);
+        level.setBlockAndUpdate(pos, PostedSignage.TRASH_BIN_BLOCK.get().defaultBlockState());
+        var bin = (TrashBinBlockEntity) level.getBlockEntity(pos);
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + 2);
+        var menu = new TrashBinMenu(4, player.getInventory(), bin);
+        player.containerMenu = menu;
+        player.getInventory().setItem(0, new ItemStack(net.minecraft.world.item.Items.EMERALD, 5));
+        helper.assertTrue(menu.quickMoveStack(player, 36).getCount() == 5
+                && bin.getItem(0).getCount() == 5 && player.getInventory().getItem(0).isEmpty(), "Shift-click stores player items");
+        helper.assertTrue(menu.quickMoveStack(player, 0).getCount() == 5 && bin.isEmpty()
+                && player.getInventory().countItem(net.minecraft.world.item.Items.EMERALD) == 5, "Shift-click recovers bin items without loss or duplication");
+        bin.setItem(0, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 7));
+        var visitor = helper.makeMockPlayer(GameType.ADVENTURE);
+        // The mock overrides game-mode queries but does not initialize ability flags.
+        GameType.ADVENTURE.updatePlayerAbilities(visitor.getAbilities());
+        visitor.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + 2);
+        var deniedMenu = new TrashBinMenu(5, visitor.getInventory(), bin);
+        visitor.containerMenu = deniedMenu;
+        visitor.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.STONE, 4));
+        helper.assertTrue(!deniedMenu.clickMenuButton(visitor, 0) && !bin.isEmpty(), "Adventure cannot empty bin");
+        helper.assertTrue(bin.storeHeldItems(visitor, InteractionHand.MAIN_HAND) == 0
+                && visitor.getMainHandItem().getCount() == 4, "Adventure cannot deposit");
+        var other = helper.makeMockPlayer(GameType.SURVIVAL);
+        other.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + 2);
+        helper.assertTrue(!menu.clickMenuButton(other, 0) && !bin.isEmpty(), "Another player's menu cannot be reused");
+        player.containerMenu = player.inventoryMenu;
+        visitor.containerMenu = visitor.inventoryMenu;
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void binMenuEmptiesOnlyItsStorageAndReturnsContentsOnBreak(GameTestHelper helper) {
         var level = helper.getLevel();
         BlockPos pos = helper.absolutePos(START);
         var block = PostedSignage.TRASH_BIN_BLOCK.get();
@@ -114,11 +161,20 @@ public final class FacilityGameTests {
         var restored = new TrashBinBlockEntity(pos, bin.getBlockState());
         restored.loadWithComponents(bin.saveWithFullMetadata(level.registryAccess()), level.registryAccess());
         helper.assertTrue(restored.getItem(0).getCount() == 7, "Stored items survive reload");
-        player.setShiftKeyDown(true);
-        helper.assertTrue(!bin.confirmEmpty(player) && !bin.isEmpty(), "First disposal click only asks for confirmation");
-        bin.setItem(1, new ItemStack(net.minecraft.world.item.Items.STONE));
-        helper.assertTrue(!bin.confirmEmpty(player) && !bin.isEmpty(), "Changed contents cancel previous confirmation");
-        helper.assertTrue(bin.confirmEmpty(player) && bin.isEmpty(), "Second confirmed click deletes contents");
+        helper.assertTrue(menu instanceof TrashBinMenu, "Bin uses dedicated menu");
+        helper.assertTrue(!menu.clickMenuButton(player, 0) && !bin.isEmpty(), "Closed menu cannot empty bin");
+        player.containerMenu = menu;
+        helper.assertTrue(!menu.clickMenuButton(player, 99) && !bin.isEmpty(), "Unknown button cannot empty bin");
+        player.setPos(pos.getX() + 100, pos.getY(), pos.getZ());
+        helper.assertTrue(!menu.clickMenuButton(player, 0) && !bin.isEmpty(), "Distant button request rejected");
+        player.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + 2);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.EMERALD, 5));
+        menu.setCarried(new ItemStack(net.minecraft.world.item.Items.GOLD_INGOT, 2));
+        helper.assertTrue(menu.clickMenuButton(player, 0) && bin.isEmpty(), "Empty button deletes stored contents in one click");
+        helper.assertTrue(player.getMainHandItem().getCount() == 5 && menu.getCarried().getCount() == 2, "Disposal preserves player inventory and cursor");
+        helper.assertTrue(!menu.clickMenuButton(player, 0), "Empty bin button is harmless");
+        menu.setCarried(ItemStack.EMPTY);
+        player.containerMenu = player.inventoryMenu;
         bin.setItem(0, new ItemStack(net.minecraft.world.item.Items.DIAMOND, 7));
         breakAndCount(helper, pos, pos, block.asItem(), GameType.SURVIVAL);
         int diamonds = level.getEntitiesOfClass(ItemEntity.class, new AABB(pos).inflate(2), e -> e.getItem().is(net.minecraft.world.item.Items.DIAMOND))
@@ -238,10 +294,6 @@ public final class FacilityGameTests {
     public static void itemsPlaceEveryFacility(GameTestHelper helper) {
         verifyItemPlacement(helper, PostedSignage.TRASH_BIN.get().getDefaultInstance(),
                 PostedSignage.TRASH_BIN_BLOCK.get(), 1, 1, START);
-        verifyItemPlacement(helper, PostedSignage.WIDE_GLASS_DOOR.get().getDefaultInstance(),
-                PostedSignage.WIDE_GLASS_DOOR_BLOCK.get(), 2, 3, START);
-        verifyItemPlacement(helper, PostedSignage.SHORT_GLASS_DOOR.get().getDefaultInstance(),
-                PostedSignage.SHORT_GLASS_DOOR_BLOCK.get(), 1, 2, START);
         helper.succeed();
     }
 

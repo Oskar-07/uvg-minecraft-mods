@@ -1,15 +1,13 @@
 # Punto de reanudación temporal
 
-## Integración en el monorepo — 13 de octubre de 2026
+Última actualización: 13 de octubre de 2026.
 
-El código y la interfaz se integran en `mods/university-guide/` de `uvg-minecraft-mods`.
-Para compilar aquí, usar Java 21 y `./gradlew.bat build runGameTestServer`.
-La paginación ya se ajusta a la altura; falta la revisión visual y multijugador.
-Las notas siguientes son el registro histórico del repositorio local independiente:
-las rutas de JDK, `releases/`, `upstream` y los cambios entonces sin commit se refieren
-a ese entorno, no al estado actual de este monorepo.
+## Verificación actual
 
-Última actualización: 12 de octubre de 2026.
+El 13 de octubre pasaron `clean build runGameTestServer --offline` con Java 21 (2/2 tests)
+y el validador de recursos. El JAR conserva el SHA-256 indicado abajo.
+Los cambios locales están preservados; el respaldo del workspace se genera mediante
+`python ../tools/backup_workspace.py`. Falta la aceptación visual de las pantallas.
 
 ## Corrección del 12 de octubre
 
@@ -22,7 +20,7 @@ JAR de desarrollo: `build/libs/universityguide-1.0.0.jar`.
 SHA-256: `E3B8031891AEFCC2449DCA39B52D5E8F19D828E2B019EFC6832F8D1B8C73D02B`.
 Los archivos de `releases/` permanecen como registros anteriores. Cambios sin commit.
 
-Este archivo conserva el contexto histórico de desarrollo. Las instrucciones actuales están en [README.md](README.md).
+Este archivo es un checkpoint temporal para continuar el desarrollo sin tener que reconstruir el contexto. El alcance funcional acordado completo está en [PLAN.md](PLAN.md).
 
 ## Verificación local del 11 de octubre
 

@@ -28,10 +28,30 @@ public final class PostedSignage {
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+    public static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENUS =
+            DeferredRegister.create(Registries.MENU, MOD_ID);
+    public static final DeferredHolder<net.minecraft.world.inventory.MenuType<?>, net.minecraft.world.inventory.MenuType<TrashBinMenu>> TRASH_BIN_MENU =
+            MENUS.register("trash_bin", () -> new net.minecraft.world.inventory.MenuType<>(
+                    TrashBinMenu::new, net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS));
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MOD_ID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MOD_ID);
+
+    public static final DeferredBlock<CitDoorBlock> CIT_SHORT_DOOR = BLOCKS.register("cit_short_door_test", () -> new CitDoorBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK),1,2));
+    public static final DeferredBlock<CitDoorBlock> CIT_WIDE_DOOR = BLOCKS.register("cit_wide_door_test", () -> new CitDoorBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK),2,3));
+    public static final DeferredBlock<CitDoorBlock> CLEAR_SHORT_DOOR = BLOCKS.register("clear_short_door_test", () -> new CitDoorBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK),1,2,false));
+    public static final DeferredBlock<CitDoorBlock> CLEAR_WIDE_DOOR = BLOCKS.register("clear_wide_door_test", () -> new CitDoorBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK),2,3,false));
+    public static final DeferredBlock<CitSwingBlock> CIT_DOOR_SWING = BLOCKS.register("cit_door_swing", () -> new CitSwingBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
+    public static final DeferredBlock<CitGlassBlock> CIT_GLASS = BLOCKS.register("cit_glass_panel", () -> new CitGlassBlock(BlockBehaviour.Properties.of().strength(.6F).sound(SoundType.GLASS).noOcclusion()));
+    public static final DeferredItem<BlockItem> CIT_SHORT_DOOR_ITEM=ITEMS.registerSimpleBlockItem("cit_short_door_test",CIT_SHORT_DOOR);
+    public static final DeferredItem<BlockItem> CIT_WIDE_DOOR_ITEM=ITEMS.registerSimpleBlockItem("cit_wide_door_test",CIT_WIDE_DOOR);
+    public static final DeferredItem<BlockItem> CLEAR_SHORT_DOOR_ITEM=ITEMS.registerSimpleBlockItem("clear_short_door_test",CLEAR_SHORT_DOOR);
+    public static final DeferredItem<BlockItem> CLEAR_WIDE_DOOR_ITEM=ITEMS.registerSimpleBlockItem("clear_wide_door_test",CLEAR_WIDE_DOOR);
+    public static final DeferredItem<BlockItem> CIT_GLASS_ITEM=ITEMS.registerSimpleBlockItem("cit_glass_panel",CIT_GLASS);
+    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CitDoorEntity>> CIT_DOOR_ENTITY=BLOCK_ENTITY_TYPES.register("cit_door",()->BlockEntityType.Builder.of(CitDoorEntity::new,CIT_SHORT_DOOR.get(),CIT_WIDE_DOOR.get(),CLEAR_SHORT_DOOR.get(),CLEAR_WIDE_DOOR.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CitSwingEntity>> CIT_SWING_ENTITY=BLOCK_ENTITY_TYPES.register("cit_swing",()->BlockEntityType.Builder.of(CitSwingEntity::new,CIT_DOOR_SWING.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CitGlassEntity>> CIT_GLASS_ENTITY=BLOCK_ENTITY_TYPES.register("cit_glass",()->BlockEntityType.Builder.of(CitGlassEntity::new,CIT_GLASS.get()).build(null));
 
     public static final DeferredBlock<VerticalSlabBlock> BRICK_VERTICAL_SLAB_BLOCK = BLOCKS.register(
             "brick_vertical_slab", () -> new VerticalSlabBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.BRICKS)));
@@ -45,8 +65,6 @@ public final class PostedSignage {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TrashBinBlockEntity>> TRASH_BIN_ENTITY = BLOCK_ENTITY_TYPES.register(
             "trash_bin", () -> BlockEntityType.Builder.of(TrashBinBlockEntity::new, TRASH_BIN_BLOCK.get()).build(null));
     public static final DeferredItem<BlockItem> TRASH_BIN = ITEMS.registerSimpleBlockItem("trash_bin", TRASH_BIN_BLOCK);
-    public static final DeferredItem<BlockItem> WIDE_GLASS_DOOR = ITEMS.registerSimpleBlockItem("wide_glass_door", WIDE_GLASS_DOOR_BLOCK);
-    public static final DeferredItem<BlockItem> SHORT_GLASS_DOOR = ITEMS.registerSimpleBlockItem("short_glass_door", SHORT_GLASS_DOOR_BLOCK);
     public static final DeferredBlock<TextureCoverBlock> TEXTURE_COVER_BLOCK = BLOCKS.register(
             "texture_cover", () -> new TextureCoverBlock(BlockBehaviour.Properties.of().strength(0).noCollission().noOcclusion().noLootTable()
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)));
@@ -151,8 +169,11 @@ public final class PostedSignage {
                         output.accept(SMOOTH_QUARTZ_VERTICAL_SLAB.get());
                         output.accept(TEXTURE_APPLICATOR.get());
                         output.accept(TRASH_BIN.get());
-                        output.accept(WIDE_GLASS_DOOR.get());
-                        output.accept(SHORT_GLASS_DOOR.get());
+                        output.accept(CIT_SHORT_DOOR_ITEM.get());
+                        output.accept(CIT_WIDE_DOOR_ITEM.get());
+                        output.accept(CLEAR_SHORT_DOOR_ITEM.get());
+                        output.accept(CLEAR_WIDE_DOOR_ITEM.get());
+                        output.accept(CIT_GLASS_ITEM.get());
                         output.accept(RIGHT_ARROW_SIGN.get());
                         output.accept(DRINKING_FOUNTAIN.get());
                         output.accept(SANSEVIERIA_PLANTER.get());
@@ -167,17 +188,23 @@ public final class PostedSignage {
                     .build());
 
     public PostedSignage(IEventBus modEventBus, ModContainer modContainer) {
-        // Existing inventory items and block palettes resolve to the retained short door.
+        // Legacy placed blocks stay compatible; retired inventory items resolve to the new clear doors.
         var oldDoor = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "glass_door");
         var shortDoor = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "short_glass_door");
         BLOCKS.addAlias(oldDoor, shortDoor);
-        ITEMS.addAlias(oldDoor, shortDoor);
+        var clearShort = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "clear_short_door_test");
+        var clearWide = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "clear_wide_door_test");
+        ITEMS.addAlias(oldDoor, clearShort);
+        ITEMS.addAlias(shortDoor, clearShort);
+        ITEMS.addAlias(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "wide_glass_door"), clearWide);
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
+        MENUS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
         Hydration.EFFECTS.register(modEventBus);
         modEventBus.addListener(HydrationPayload::register);
+        modEventBus.addListener(CitDoorPayloads::register);
     }
 
     /** Keep all thin wall signs consistent in hardness, sound and non-occluding rendering. */

@@ -98,7 +98,7 @@ $blockIds = @(Get-ChildItem -LiteralPath $blockstateRoot -File -Filter '*.json' 
 
 Test-ExactAssetSet $blockstateRoot '*.json' 'blockstate' $registeredBlockIds
 # Internal surface covers have no inventory item; the applicator is a standalone item.
-$inventoryBlockIds = @($registeredBlockIds | Where-Object { $_ -ne 'texture_cover' })
+$inventoryBlockIds = @($registeredBlockIds | Where-Object { $_ -notin @('texture_cover','cit_door_swing','short_glass_door','wide_glass_door') })
 Test-ExactAssetSet $itemModelRoot '*.json' 'item model' ($inventoryBlockIds + @('texture_applicator'))
 Test-ExactAssetSet $lootRoot '*.json' 'loot table' $registeredBlockIds
 
@@ -146,10 +146,15 @@ foreach ($languageFile in $languageFiles) {
 
 foreach ($blockId in $blockIds) {
     Require-File (Join-Path $blockModelRoot "$blockId.json") "Missing block model for $blockId"
-    if ($blockId -ne 'texture_cover') {
+    if ($blockId -notin @('texture_cover','cit_door_swing','short_glass_door','wide_glass_door')) {
         Require-File (Join-Path $itemModelRoot "$blockId.json") "Missing item model for $blockId"
     }
     Require-File (Join-Path $lootRoot "$blockId.json") "Missing loot table for $blockId"
+    if ($blockId -eq 'trash_bin') {
+        Require-File (Join-Path $blockModelRoot 'trash_bin.obj') 'Missing default tapered bin mesh'
+        Require-File (Join-Path $blockModelRoot 'trash_bin_item.obj') 'Missing default tapered bin inventory mesh'
+        Require-File (Join-Path $blockModelRoot 'trash_bin.mtl') 'Missing default tapered bin materials'
+    }
 
     $blockstatePath = Join-Path $blockstateRoot "$blockId.json"
     if ($parsedJson.ContainsKey($blockstatePath)) {
@@ -161,7 +166,23 @@ foreach ($blockId in $blockIds) {
             west = 270
         }
         $expectedVariants = [ordered]@{}
-        if ($blockId -eq 'texture_cover') {
+        if ($blockId -in @('cit_short_door_test','cit_wide_door_test','clear_short_door_test','clear_wide_door_test','cit_glass_panel','cit_door_swing')) {
+            if (@($blockstate.multipart).Count -ne 1 -or $blockstate.multipart[0].apply.model -ne "posted_signage:block/$blockId") {
+                Add-ValidationError "Incorrect entity-rendered multipart model in $blockstatePath"
+            }
+        }
+        elseif ($blockId -match '^(customizable_hanging_sign|(?:mens|womens|mixed)_restroom_sign)' -or
+                $blockId -in @('right_arrow_sign','fire_extinguisher_sign','emergency_exit_sign','do_not_use_elevator_sign','emergency_stairs_sign')) {
+            foreach ($facing in $expectedRotations.Keys) {
+                foreach ($glass in @('false','true')) {
+                    $suffix = if ($glass -eq 'true') { '_glass' } else { '' }
+                    $expectedVariants["facing=$facing,glass_mounted=$glass"] = [ordered]@{
+                        model = "posted_signage:block/${blockId}${suffix}"; rotation = $expectedRotations[$facing]
+                    }
+                }
+            }
+        }
+        elseif ($blockId -eq 'texture_cover') {
             foreach ($facing in @('north', 'east', 'south', 'west', 'up', 'down')) {
                 $expectedVariants["facing=$facing"] = [ordered]@{ model = 'posted_signage:block/texture_cover'; rotation = 0 }
             }
@@ -245,7 +266,7 @@ foreach ($blockId in $blockIds) {
             }
         }
 
-        $actualVariantNames = @($blockstate.variants.PSObject.Properties.Name)
+        $actualVariantNames = if ($blockstate.PSObject.Properties['variants']) { @($blockstate.variants.PSObject.Properties.Name) } else { @() }
         foreach ($variantKey in $expectedVariants.Keys) {
             $variantProperty = $blockstate.variants.PSObject.Properties[$variantKey]
             if ($null -eq $variantProperty) {
@@ -281,7 +302,7 @@ foreach ($blockId in $blockIds) {
     if ($parsedJson.ContainsKey($lootPath)) {
         $loot = $parsedJson[$lootPath]
         $pools = @($loot.pools)
-        if ($blockId -eq 'texture_cover') {
+        if ($blockId -in @('texture_cover','cit_short_door_test','cit_wide_door_test','clear_short_door_test','clear_wide_door_test','cit_door_swing')) {
             if ($loot.type -ne 'minecraft:block' -or $pools.Count -ne 0) {
                 Add-ValidationError "Internal texture covers must not drop items: $lootPath"
             }
@@ -292,9 +313,14 @@ foreach ($blockId in $blockIds) {
         else {
             $pool = $pools[0]
             $entries = @($pool.entries)
+            $dropId = switch ($blockId) {
+                'short_glass_door' { 'clear_short_door_test' }
+                'wide_glass_door' { 'clear_wide_door_test' }
+                default { $blockId }
+            }
             if ([int]$pool.rolls -ne 1 -or $entries.Count -ne 1 -or
                     $entries[0].type -ne 'minecraft:item' -or
-                    $entries[0].name -ne "posted_signage:$blockId") {
+                    $entries[0].name -ne "posted_signage:$dropId") {
                 Add-ValidationError "Loot table must drop exactly one matching block item: $lootPath"
             }
             $conditions = @($pool.conditions | ForEach-Object condition)

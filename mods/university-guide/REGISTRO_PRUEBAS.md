@@ -1,10 +1,14 @@
 # Registro de desarrollo y pruebas
 
-> Registro histórico importado el 13 de octubre de 2026 desde el repositorio local.
-> Las rutas de JDK, mundos, releases y remotos describen aquel entorno.
-> El código actual está en `mods/university-guide/` del monorepo `uvg-minecraft-mods`.
+Última actualización: 13 de octubre de 2026.
 
-Última actualización: 12 de octubre de 2026.
+## Verificación del 13 de octubre
+
+- Java 21: `clean build runGameTestServer --offline` exitoso; 2/2 GameTests aprobados.
+- Validador: 6 JSON y traducciones consistentes.
+- JAR SHA-256: `E3B8031891AEFCC2449DCA39B52D5E8F19D828E2B019EFC6832F8D1B8C73D02B`.
+- Log: `../posted-signage/artifacts/logs/university-guide-verification-2026-10-13.log`.
+- La aceptación visual de las pantallas sigue pendiente. No se alteraron las releases.
 
 ## Verificación del 12 de octubre
 
@@ -16,7 +20,7 @@
 - JAR `build/libs/universityguide-1.0.0.jar`, SHA-256
   `E3B8031891AEFCC2449DCA39B52D5E8F19D828E2B019EFC6832F8D1B8C73D02B`.
 
-Este documento registra las verificaciones realizadas sobre `University Guide` y los resultados observados. Las instrucciones actuales están en [README.md](README.md).
+Este documento registra las verificaciones realizadas sobre `University Guide`, los resultados observados y el punto exacto desde el cual continuar. El alcance funcional completo permanece en [PLAN.md](PLAN.md).
 
 ## Entorno utilizado
 

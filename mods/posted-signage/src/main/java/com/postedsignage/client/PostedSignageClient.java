@@ -11,9 +11,16 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 public final class PostedSignageClient {
     private PostedSignageClient() {}
 
+    @SubscribeEvent
+    public static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        event.register(PostedSignage.TRASH_BIN_MENU.get(), TrashBinScreen::new);
+    }
+
     /** Bind each registered entity type to its client renderer during renderer setup. */
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(PostedSignage.CIT_DOOR_ENTITY.get(), CitDoorRenderer::new);
+        event.registerBlockEntityRenderer(PostedSignage.CIT_GLASS_ENTITY.get(), CitGlassRenderer::new);
         event.registerBlockEntityRenderer(PostedSignage.TEXTURE_COVER_ENTITY.get(), TextureCoverRenderer::new);
         event.registerBlockEntityRenderer(
                 PostedSignage.CUSTOMIZABLE_HANGING_SIGN_BLOCK_ENTITY.get(),

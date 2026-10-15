@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "posted_signage:short_glass_door"
+          "name": "posted_signage:clear_short_door_test"
         }
       ],
       "conditions": [

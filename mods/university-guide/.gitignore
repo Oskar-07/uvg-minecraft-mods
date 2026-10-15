@@ -42,3 +42,6 @@ repo/
 ### Local Java toolchain ###
 /.jdk21/
 /jdk21.zip
+
+### Local release artifacts ###
+/releases/*.jar

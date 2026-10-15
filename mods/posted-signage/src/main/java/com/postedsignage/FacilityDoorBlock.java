@@ -28,6 +28,10 @@ public final class FacilityDoorBlock extends FacilityMultiBlock {
         registerDefaultState(defaultBlockState().setValue(OPEN, false));
     }
     @Override protected MapCodec<FacilityDoorBlock> codec() { return CODEC; }
+    /** Legacy world blocks recover as the current text-free door instead of a retired item. */
+    @Override public net.minecraft.world.item.Item asItem() {
+        return width==2?PostedSignage.CLEAR_WIDE_DOOR_ITEM.get():PostedSignage.CLEAR_SHORT_DOOR_ITEM.get();
+    }
     @Override protected Direction widthDirection(BlockState state) {
         return width == 2 && state.getValue(OPEN) ? state.getValue(FACING) : super.widthDirection(state);
     }
