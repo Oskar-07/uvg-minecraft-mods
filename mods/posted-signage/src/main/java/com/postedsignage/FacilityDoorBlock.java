@@ -23,28 +23,34 @@ public final class FacilityDoorBlock extends FacilityMultiBlock {
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
     public static final MapCodec<FacilityDoorBlock> CODEC = simpleCodec(p -> new FacilityDoorBlock(p, 1, 2));
 
+    // Configura las propiedades iniciales del bloque.
     public FacilityDoorBlock(Properties properties, int width, int height) {
         super(properties, width, height);
         registerDefaultState(defaultBlockState().setValue(OPEN, false));
     }
+    // Permite reconstruir el bloque desde su registro.
     @Override protected MapCodec<FacilityDoorBlock> codec() { return CODEC; }
     /** Legacy world blocks recover as the current text-free door instead of a retired item. */
     @Override public net.minecraft.world.item.Item asItem() {
         return width==2?PostedSignage.CLEAR_WIDE_DOOR_ITEM.get():PostedSignage.CLEAR_SHORT_DOOR_ITEM.get();
     }
+    // Obtiene la dirección horizontal que ocupa el conjunto.
     @Override protected Direction widthDirection(BlockState state) {
         return width == 2 && state.getValue(OPEN) ? state.getValue(FACING) : super.widthDirection(state);
     }
+    // Calcula el origen de la puerta después del giro.
     BlockPos toggledOrigin(BlockPos anchor, BlockState state) {
         if (width != 2) return anchor;
         int sign = state.getValue(OPEN) ? -1 : 1;
         return anchor.relative(state.getValue(FACING).getClockWise(), sign)
                 .relative(state.getValue(FACING).getOpposite(), sign);
     }
+    // Declara las propiedades guardadas en cada bloque.
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(OPEN);
     }
+    // Comprueba obstáculos y gira todas las piezas antiguas.
     @Override protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
             Player player, BlockHitResult hit) {
         if (!player.mayBuild() || !level.mayInteract(player, pos)) return InteractionResult.FAIL;
@@ -91,6 +97,7 @@ public final class FacilityDoorBlock extends FacilityMultiBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
+    // Devuelve los límites de selección y colisión.
     @Override protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         double x0 = 0, x1 = 16, z0 = 0, z1 = 3;
         Direction facing = state.getValue(FACING);

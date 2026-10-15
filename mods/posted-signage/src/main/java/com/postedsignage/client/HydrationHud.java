@@ -25,6 +25,7 @@ public final class HydrationHud {
             int value = Hydration.level(mc.player);
             for (int i = 0; i < 10; i++) {
                 int x = right - 9 - i * 8;
+                // Cada gota representa dos puntos de hidratación.
                 int fill = Math.clamp(value - (9 - i) * 2, 0, 2);
                 String sprite = fill == 2 ? "full" : fill == 1 ? "half" : "empty";
                 gui.blitSprite(ResourceLocation.fromNamespaceAndPath(PostedSignage.MOD_ID, "hydration/" + sprite), x, y, 9, 9);

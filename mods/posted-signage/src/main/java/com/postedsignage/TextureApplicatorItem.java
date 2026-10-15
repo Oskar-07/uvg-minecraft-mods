@@ -13,11 +13,15 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 
+// Copia una cara de textura y la aplica a otra superficie.
 public final class TextureApplicatorItem extends Item {
+    // Conecta los registros y eventos del mod.
     public TextureApplicatorItem(Properties properties) { super(properties); }
+    // Da prioridad al aplicador frente al bloque pulsado.
     @Override public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
         return useOn(context); // Sample/apply before chests, furnaces and other block interactions.
     }
+    // Muestrea o aplica la textura según la interacción.
     @Override public InteractionResult useOn(UseOnContext context) {
         var player = context.getPlayer();
         var level = context.getLevel();
@@ -87,10 +91,12 @@ public final class TextureApplicatorItem extends Item {
             default -> 0;
         };
     }
+    // Muestra al jugador el resultado de la aplicación.
     private InteractionResult message(UseOnContext context, String key) {
         if (!context.getLevel().isClientSide) context.getPlayer().displayClientMessage(Component.translatable("message.posted_signage." + key), true);
         return InteractionResult.FAIL;
     }
+    // Muestra la selección de textura en la descripción.
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.posted_signage.texture_applicator"));
         CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();

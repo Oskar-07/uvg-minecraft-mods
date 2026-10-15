@@ -50,6 +50,7 @@ public final class FountainGameTests {
         helper.succeed();
     }
     private static final BlockPos BASE = new BlockPos(3,1,3);
+    // Obtiene el bloque de la prueba desde el registro.
     private static DrinkingFountainBlock block() { return PostedSignage.DRINKING_FOUNTAIN_BLOCK.get(); }
     /** Build a temporary wall and use the real placement rules before constructing the upper half. */
     private static BlockState place(GameTestHelper helper, Direction facing) {

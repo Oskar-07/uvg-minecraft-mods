@@ -11,20 +11,25 @@ import net.minecraft.world.item.ItemStack;
 /** Standard container synchronization and server-validated empty button. */
 public final class TrashBinMenu extends AbstractContainerMenu {
     private final Container bin;
+    // Prepara las ranuras del basurero y del jugador.
     public TrashBinMenu(int id, Inventory inventory) { this(id, inventory, new SimpleContainer(9)); }
+    // Prepara las ranuras del basurero y del jugador.
     public TrashBinMenu(int id, Inventory inventory, Container bin) {
         super(PostedSignage.TRASH_BIN_MENU.get(), id);
         checkContainerSize(bin, 9);
         this.bin = bin;
         bin.startOpen(inventory.player);
+        // Primero el basurero, luego la mochila y la barra rápida.
         for (int i = 0; i < 9; i++) addSlot(new Slot(bin, i, 8 + i * 18, 20));
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
             addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 88 + row * 18));
         for (int i = 0; i < 9; i++) addSlot(new Slot(inventory, i, 8 + i * 18, 146));
     }
+    // Comprueba que el jugador aún puede usar el menú.
     @Override public boolean stillValid(Player player) {
         return bin instanceof TrashBinBlockEntity entity ? entity.canAccess(player) : bin.stillValid(player);
     }
+    // Valida el botón y vacía solo el basurero.
     @Override public boolean clickMenuButton(Player player, int id) {
         if (id != 0 || player.containerMenu != this || !(bin instanceof TrashBinBlockEntity entity)
                 || !entity.canAccess(player) || bin.isEmpty()) return false;
@@ -33,6 +38,7 @@ public final class TrashBinMenu extends AbstractContainerMenu {
         broadcastChanges();
         return true;
     }
+    // Transfiere objetos con Mayús entre ambos inventarios.
     @Override public ItemStack quickMoveStack(Player player, int index) {
         if (index < 0 || index >= slots.size() || !stillValid(player)) return ItemStack.EMPTY;
         Slot slot = slots.get(index);
@@ -45,6 +51,7 @@ public final class TrashBinMenu extends AbstractContainerMenu {
         slot.onTake(player, current);
         return original;
     }
+    // Notifica al contenedor que el jugador cerró el menú.
     @Override public void removed(Player player) {
         super.removed(player);
         bin.stopOpen(player);

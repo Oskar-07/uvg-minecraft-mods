@@ -11,7 +11,9 @@ import net.minecraft.util.RandomSource;
 
 /** Uses the sampled face's atlas sprite, including animated/resource-pack textures. */
 public final class TextureCoverRenderer implements BlockEntityRenderer<TextureCoverBlockEntity> {
+    // Crea el renderizador del cliente.
     public TextureCoverRenderer(BlockEntityRendererProvider.Context context) {}
+    // Dibuja la cara copiada con su orientación e iluminación.
     @Override public void render(TextureCoverBlockEntity cover, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         var minecraft = Minecraft.getInstance();
         var state = cover.sample();

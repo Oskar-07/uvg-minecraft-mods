@@ -42,13 +42,16 @@ public final class DrinkingFountainBlock extends HorizontalDirectionalBlock {
     public static final MapCodec<DrinkingFountainBlock> CODEC = simpleCodec(DrinkingFountainBlock::new);
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
+    // Configura las propiedades iniciales del bloque.
     public DrinkingFountainBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(HALF, DoubleBlockHalf.LOWER).setValue(ACTIVE, false));
     }
     /** Minecraft uses this codec when reconstructing the block from registry data. */
     @Override protected MapCodec<? extends HorizontalDirectionalBlock> codec() { return CODEC; }
+    // Declara las propiedades guardadas en cada bloque.
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, HALF, ACTIVE); }
+    // Calcula la orientación y comprueba la colocación.
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction facing = context.getClickedFace();
         BlockPos pos = context.getClickedPos();
@@ -66,6 +69,7 @@ public final class DrinkingFountainBlock extends HorizontalDirectionalBlock {
     }
     /** Each half independently requires a sturdy attachment face behind its own cell. */
     @Override protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) { return supported(state, level, pos); }
+    // Completa el bebedero colocando su mitad superior.
     @Override public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
         level.setBlock(pos.above(), state.setValue(HALF, DoubleBlockHalf.UPPER), UPDATE_ALL);
     }
@@ -119,6 +123,7 @@ public final class DrinkingFountainBlock extends HorizontalDirectionalBlock {
     }
     /** Empty-hand clicks share the same button hit test and cooldown as held-item clicks. */
     @Override protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) { return activate(state, level, pos, player, hit); }
+    // Activa el bebedero también con un objeto en la mano.
     @Override protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return activate(state, level, pos, player, hit).consumesAction() ? ItemInteractionResult.sidedSuccess(level.isClientSide()) : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
@@ -143,5 +148,6 @@ public final class DrinkingFountainBlock extends HorizontalDirectionalBlock {
     }
     /** Rotate the stored facing so structure rotations preserve the attachment orientation. */
     @Override protected BlockState rotate(BlockState state, Rotation rotation) { return state.setValue(FACING, rotation.rotate(state.getValue(FACING))); }
+    // Refleja la orientación del bloque.
     @Override protected BlockState mirror(BlockState state, Mirror mirror) { return rotate(state, mirror.getRotation(state.getValue(FACING))); }
 }

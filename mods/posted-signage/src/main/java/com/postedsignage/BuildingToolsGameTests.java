@@ -13,16 +13,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.*;
 import net.neoforged.neoforge.gametest.*;
 
+// Prueba losas y herramientas de textura en un mundo real.
 @GameTestHolder(PostedSignage.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class BuildingToolsGameTests {
     private static final BlockPos CENTER = new BlockPos(3,2,3);
 
+    // Construye el contexto de colocación de la prueba.
     private static UseOnContext context(Player player, BlockPos pos, Direction face) {
         return new UseOnContext(player, InteractionHand.MAIN_HAND,
                 new BlockHitResult(pos.getCenter().add(Vec3.atLowerCornerOf(face.getNormal()).scale(0.5)), face, pos, false));
     }
 
+    // Comprueba orientación y límites de las losas.
     @GameTest(template="empty") public static void slabPlacementAndBounds(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
         var pos = helper.absolutePos(CENTER);
@@ -44,6 +47,7 @@ public final class BuildingToolsGameTests {
         helper.succeed();
     }
 
+    // Verifica las seis caras y la pérdida de soporte.
     @GameTest(template="empty") public static void coversAllSixFacesAndLoseSupport(GameTestHelper helper) {
         var level = helper.getLevel();
         var pos = helper.absolutePos(CENTER);
@@ -60,6 +64,7 @@ public final class BuildingToolsGameTests {
         helper.succeed();
     }
 
+    // Verifica muestreo, repintado y guardado de texturas.
     @GameTest(template="empty") public static void sampleApplyRepaintAndPersistence(GameTestHelper helper) {
         var level = helper.getLevel();
         var pos = helper.absolutePos(CENTER);
@@ -95,6 +100,7 @@ public final class BuildingToolsGameTests {
         helper.succeed();
     }
 
+    // Rechaza aplicaciones inválidas o sin permiso.
     @GameTest(template="empty") public static void rejectsMissingSelectionOccupiedSpaceAndAdventure(GameTestHelper helper) {
         var level = helper.getLevel();
         var pos = helper.absolutePos(CENTER);
@@ -117,6 +123,7 @@ public final class BuildingToolsGameTests {
         helper.succeed();
     }
 
+    // Verifica orientación y persistencia de la textura.
     @GameTest(template="empty") public static void textureOrientationFollowsPlayerAndSurvivesReload(GameTestHelper helper) {
         var level = helper.getLevel();
         var pos = helper.absolutePos(CENTER);

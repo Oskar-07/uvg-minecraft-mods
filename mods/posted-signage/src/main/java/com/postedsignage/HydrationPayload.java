@@ -13,6 +13,7 @@ public record HydrationPayload(int value) implements CustomPacketPayload {
             (buf, payload) -> buf.writeVarInt(payload.value), buf -> new HydrationPayload(buf.readVarInt()));
     /** Return the registered packet identifier used to route this payload. */
     @Override public Type<HydrationPayload> type() { return TYPE; }
+    // Conecta los registros y manejadores correspondientes.
     public static void register(RegisterPayloadHandlersEvent event) {
         // Uses only common Player APIs, so no client classes are linked on dedicated servers.
         event.registrar("1").playToClient(TYPE, CODEC, (payload, context) ->

@@ -12,7 +12,9 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 /** Remove only obsolete upper cells after legacy IDs have resolved through registry aliases. */
 @EventBusSubscriber(modid = PostedSignage.MOD_ID)
 public final class FacilityMigration {
+    // Evita crear instancias de esta clase de utilidades.
     private FacilityMigration() {}
+    // Elimina únicamente las piezas antiguas obsoletas.
     public static void removeObsoleteCell(ServerLevel level, BlockPos pos) {
         var state = level.getBlockState(pos);
         if (state.getBlock() instanceof FacilityMultiBlock block && block.isObsoletePart(state)) {
@@ -20,6 +22,7 @@ public final class FacilityMigration {
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
         }
     }
+    // Programa la limpieza de piezas antiguas al cargar.
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !(event.getChunk() instanceof LevelChunk chunk)) return;

@@ -37,6 +37,7 @@ public final class Hydration {
     private static final class DehydrationEffect extends MobEffect {
         DehydrationEffect(int color) { super(MobEffectCategory.HARMFUL, color); }
     }
+    // Evita crear instancias de esta clase de utilidades.
     private Hydration() {}
 
     /** Lazily initialize namespaced persistent NBT; absent data means a new player starts fully hydrated. */
@@ -111,7 +112,10 @@ public final class Hydration {
     }
     /** Minecraft creates a new player entity on respawn, so transfer the namespaced state explicitly. */
     @SubscribeEvent public static void clonePlayer(PlayerEvent.Clone event) { copy(event.getOriginal(), event.getEntity()); }
+    // Sincroniza la hidratación al entrar al servidor.
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event) { sync(event.getEntity()); }
+    // Sincroniza la hidratación después de reaparecer.
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { sync(event.getEntity()); }
+    // Sincroniza la hidratación al cambiar de dimensión.
     @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { sync(event.getEntity()); }
 }

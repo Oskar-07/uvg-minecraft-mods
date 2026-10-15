@@ -23,9 +23,11 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class FacilityGameTests {
     private static final BlockPos START = new BlockPos(2, 2, 2);
 
+    // Evita crear instancias de esta clase de utilidades.
     private FacilityGameTests() {
     }
 
+    // Verifica depósitos y conservación del sobrante.
     @GameTest(template = "empty")
     public static void binRightClickStoresHeldStackAndPreservesOverflow(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -64,6 +66,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Verifica apertura completa y paso libre.
     @GameTest(template = "empty")
     public static void doorsToggleEveryPartAndClearThePassage(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -109,6 +112,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Verifica transferencias y permisos del inventario.
     @GameTest(template = "empty")
     public static void binMenuTransfersAndRejectsUnauthorizedPlayers(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -143,6 +147,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Verifica vaciado y recuperación al romper el basurero.
     @GameTest(template = "empty")
     public static void binMenuEmptiesOnlyItsStorageAndReturnsContentsOnBreak(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -183,6 +188,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Verifica la limpieza selectiva de piezas antiguas.
     @GameTest(template = "empty")
     public static void legacyFacilityCellsMigrateWithoutDeletingRetainedParts(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -206,6 +212,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Verifica objetos recuperados según el modo de juego.
     @GameTest(template = "empty")
     public static void everyFacilityPartDropsExactlyOneInSurvivalAndNoneInCreative(GameTestHelper helper) {
         var blocks = new FacilityMultiBlock[] { PostedSignage.TRASH_BIN_BLOCK.get(),
@@ -236,6 +243,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Verifica un único mural recuperado en Supervivencia.
     @GameTest(template = "empty")
     public static void everyMuralPartDropsExactlyOneInSurvivalAndNoneInCreative(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -264,6 +272,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Rompe una pieza y cuenta los objetos generados.
     private static void breakAndCount(GameTestHelper helper, BlockPos selected, BlockPos origin,
             net.minecraft.world.item.Item item, GameType mode) {
         var level = helper.getLevel();
@@ -281,6 +290,7 @@ public final class FacilityGameTests {
         drops.forEach(ItemEntity::discard);
     }
 
+    // Verifica montaje y retirada de cada estructura.
     @GameTest(template = "empty")
     public static void assemblesAndRemovesEveryFacility(GameTestHelper helper) {
         verifyLifecycle(helper, PostedSignage.TRASH_BIN_BLOCK.get(), 1, 1, START);
@@ -297,6 +307,7 @@ public final class FacilityGameTests {
         helper.succeed();
     }
 
+    // Comprueba la colocación usando el objeto real.
     private static void verifyItemPlacement(
             GameTestHelper helper,
             ItemStack stack,
@@ -336,6 +347,7 @@ public final class FacilityGameTests {
         }
     }
 
+    // Comprueba montaje, soporte y retirada del conjunto.
     private static void verifyLifecycle(
             GameTestHelper helper,
             FacilityMultiBlock block,
