@@ -18,26 +18,36 @@ import net.minecraft.world.phys.shapes.*;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.*;
 
+// Prueba puertas, vidrio conectado y permisos de edición.
 @GameTestHolder(PostedSignage.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class CitArchitectureGameTests {
+    // Obtiene la posición base del escenario de prueba.
     private static BlockPos site(GameTestHelper h){return h.absolutePos(new BlockPos(3,1,3));}
+    // Coloca una puerta de prueba con orientación y bisagra.
     private static CitDoorEntity place(GameTestHelper h,CitDoorBlock b,Direction f,boolean right){
         BlockPos p=site(h);var s=b.defaultBlockState().setValue(CitDoorBlock.FACING,f).setValue(CitDoorBlock.RIGHT,right);
         h.getLevel().setBlockAndUpdate(p,s);b.setPlacedBy(h.getLevel(),p,s,null,ItemStack.EMPTY);
         return (CitDoorEntity)h.getLevel().getBlockEntity(p);
     }
+    // Crea un jugador de prueba con permisos controlados.
     private static Player actor(GameTestHelper h,boolean creative,boolean op){
         Player p=new EditorPlayer(h,creative,op);
         p.setPos(site(h).getCenter().add(0,0,3));return p;
     }
+    // Jugador simulado para probar modos y permisos por separado.
     private static final class EditorPlayer extends Player {
         boolean creative,op;
+        // Inicializa el jugador con los permisos de la prueba.
         EditorPlayer(GameTestHelper h,boolean creative,boolean op){super(h.getLevel(),site(h),0,new GameProfile(UUID.randomUUID(),"CIT test"));this.creative=creative;this.op=op;}
+        // Simula el modo Creativo para la prueba.
         @Override public boolean isCreative(){return creative;}
+        // Simula el modo espectador para la prueba.
         @Override public boolean isSpectator(){return false;}
+        // Simula los permisos del jugador de prueba.
         @Override public boolean hasPermissions(int level){return op&&level<=2;}
     }
+    // Verifica la migración de los objetos de puertas antiguas.
     @GameTest(template="empty")
     public static void retiredDoorItemsResolveToCurrentClearDoors(GameTestHelper h){
         var ids=net.minecraft.core.registries.BuiltInRegistries.ITEM;
@@ -49,6 +59,7 @@ public final class CitArchitectureGameTests {
         h.assertTrue(PostedSignage.SHORT_GLASS_DOOR_BLOCK.get().asItem()==PostedSignage.CLEAR_SHORT_DOOR_ITEM.get(),"Picking/breaking legacy short door returns current door");
         h.succeed();
     }
+    // Verifica montaje en ambas caras y cambios de soporte.
     @GameTest(template="empty")
     public static void signsAndPostersMountOnBothGlassFacesAndFollowSupport(GameTestHelper h){
         var level=h.getLevel();var support=site(h);var glass=PostedSignage.CIT_GLASS.get();
@@ -80,6 +91,7 @@ public final class CitArchitectureGameTests {
             }
         }h.succeed();
     }
+    // Verifica puertas sin texto ni editor.
     @GameTest(template="empty")
     public static void clearDoorsKeepGeometryAndNeverOpenLabelEditor(GameTestHelper h){
         for(var b:new CitDoorBlock[]{PostedSignage.CLEAR_SHORT_DOOR.get(),PostedSignage.CLEAR_WIDE_DOOR.get()})
@@ -93,6 +105,7 @@ public final class CitArchitectureGameTests {
             }
         h.succeed();
     }
+    // Verifica la bisagra según la mitad pulsada.
     @GameTest(template="empty")
     public static void itemPlacementChoosesHingeFromClickedHalf(GameTestHelper h){
         var l=h.getLevel();var p=site(h);var player=actor(h,true,false);
@@ -107,6 +120,7 @@ public final class CitArchitectureGameTests {
             h.assertTrue(e.frameCells().size()==b.width*b.height,"Complete assembly");e.dismantle(false);
         }h.succeed();
     }
+    // Rechaza guardados tras perder permisos de edición.
     @GameTest(template="empty")
     public static void permissionsAreRecheckedAfterOpeningEditor(GameTestHelper h){
         var e=place(h,PostedSignage.CIT_SHORT_DOOR.get(),Direction.NORTH,false);var p=(EditorPlayer)actor(h,true,true);
@@ -114,6 +128,7 @@ public final class CitArchitectureGameTests {
         p.creative=true;p.op=false;h.assertTrue(!e.saveEdit(p,token,"123",0),"Creative nonoperator loses save access");
         p.op=true;h.assertTrue(e.saveEdit(p,token,"123",0),"Authorized player can save valid session");e.dismantle(false);h.succeed();
     }
+    // Conserva el bloque que reemplaza una pieza.
     @GameTest(template="empty")
     public static void replacementCleansAssemblyWithoutRemovingReplacement(GameTestHelper h){
         var l=h.getLevel();
@@ -126,6 +141,7 @@ public final class CitArchitectureGameTests {
             l.removeBlock(selected,false);
         }h.succeed();
     }
+    // Verifica que los mensajes conservan los ceros iniciales.
     @GameTest(template="empty")
     public static void editorMessagesRoundTripWithoutLosingLeadingZeros(GameTestHelper h){
         var buffer=new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(),h.getLevel().registryAccess());
@@ -136,6 +152,7 @@ public final class CitArchitectureGameTests {
             h.assertTrue(save.equals(CitDoorPayloads.Save.CODEC.decode(buffer)),"Save message round trip");
         }finally{buffer.release();}h.succeed();
     }
+    // Verifica marcos fijos y colisiones en las cuatro direcciones.
     @GameTest(template="empty")
     public static void framesRemainFixedAndLeavesCollideInAllOrientations(GameTestHelper h){
         for(var b:new CitDoorBlock[]{PostedSignage.CIT_SHORT_DOOR.get(),PostedSignage.CIT_WIDE_DOOR.get()})
@@ -152,6 +169,7 @@ public final class CitArchitectureGameTests {
             }
         h.succeed();
     }
+    // Verifica que los obstáculos impiden abrir la puerta.
     @GameTest(template="empty")
     public static void obstructionNeverOverwritesGlass(GameTestHelper h){
         for(var b:new CitDoorBlock[]{PostedSignage.CIT_SHORT_DOOR.get(),PostedSignage.CIT_WIDE_DOOR.get()})
@@ -166,6 +184,7 @@ public final class CitArchitectureGameTests {
             }
         h.succeed();
     }
+    // Prueba permisos, sesiones, distancia y códigos válidos.
     @GameTest(template="empty")
     public static void editorEnforcesPermissionsSessionsRangeAndCodes(GameTestHelper h){
         var e=place(h,PostedSignage.CIT_SHORT_DOOR.get(),Direction.NORTH,false);
@@ -191,6 +210,7 @@ public final class CitArchitectureGameTests {
         p.setPos(site(h).getCenter());var last=e.beginEdit(p);e.dismantle(false);
         h.assertTrue(!e.saveEdit(p,last,"1",0),"Destroyed controller rejects stale save");h.succeed();
     }
+    // Verifica etiquetas al girar, recargar y recuperar puertas.
     @GameTest(template="empty")
     public static void labelsPersistAcrossSwingSaveAndRecovery(GameTestHelper h){
         var e=place(h,PostedSignage.CIT_WIDE_DOOR.get(),Direction.EAST,true);var p=actor(h,true,true);
@@ -203,6 +223,7 @@ public final class CitArchitectureGameTests {
         var item=e.asItem();e.dismantle(false);var next=place(h,PostedSignage.CIT_WIDE_DOOR.get(),Direction.SOUTH,false);next.readItem(item);
         h.assertTrue(next.room().equals("0001A")&&next.color()==6,"Recovered item preserves label");next.dismantle(false);h.succeed();
     }
+    // Verifica una sola puerta recuperable desde cualquier pieza.
     @GameTest(template="empty")
     public static void everyDoorPartBreaksAssemblyWithExactlyOneLabeledDrop(GameTestHelper h){
         var l=h.getLevel();var player=FakePlayerFactory.getMinecraft(l);
@@ -223,6 +244,7 @@ public final class CitArchitectureGameTests {
             }
         h.succeed();
     }
+    // Verifica uniones sin bordes internos y esquinas enmarcadas.
     @GameTest(template="empty")
     public static void glassRemovesInternalFramesAndUpdatesCorners(GameTestHelper h){
         var l=h.getLevel();var p=site(h);var b=PostedSignage.CIT_GLASS.get();
@@ -235,6 +257,7 @@ public final class CitArchitectureGameTests {
         h.assertTrue(CitGlassBlock.pieces(l.getBlockState(p),l,p).stream().anyMatch(q->!q.glass()&&q.box().equals(new AABB(.4,0,.4,.6,1,.6))),"Corner retains center post");
         l.removeBlock(p.east(),false);h.assertTrue(!l.getBlockState(p).getValue(CitGlassBlock.E),"Removal updates connection");h.succeed();
     }
+    // Verifica que el vidrio vecino sobrevive a los giros.
     @GameTest(template="empty")
     public static void glassBesideAndAboveFramesSurvivesSwings(GameTestHelper h){
         var l=h.getLevel();var glass=PostedSignage.CIT_GLASS.get();
@@ -249,6 +272,7 @@ public final class CitArchitectureGameTests {
             e.dismantle(false);for(var p:panels)l.removeBlock(p,false);
         }h.succeed();
     }
+    // Rechaza cambios de letreros sin Creativo y permisos.
     @GameTest(template="empty")
     public static void signUpdatesAndApplicatorsRequireCreativeOperator(GameTestHelper h){
         var l=h.getLevel();var p=site(h);

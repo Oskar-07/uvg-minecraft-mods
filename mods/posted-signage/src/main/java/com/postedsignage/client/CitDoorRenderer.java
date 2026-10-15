@@ -6,13 +6,17 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.*;
 
+// Dibuja marco, hoja y etiqueta de la puerta CIT.
 public final class CitDoorRenderer implements BlockEntityRenderer<CitDoorEntity> {
     private final Font font;
+    // Crea el renderizador del cliente.
     public CitDoorRenderer(BlockEntityRendererProvider.Context c){font=c.getFont();}
+    // Dibuja el marco fijo y la hoja con su etiqueta giratoria.
     @Override public void render(CitDoorEntity e,float tick,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
         if(!e.isRoot())return;
         var s=e.getBlockState();var b=(CitDoorBlock)s.getBlock();boolean right=s.getValue(CitDoorBlock.RIGHT);
         pose.pushPose();pose.translate(.5,0,.5);pose.mulPose(Axis.YP.rotationDegrees(180-s.getValue(CitDoorBlock.FACING).toYRot()));pose.translate(-.5,0,-.5);
+        // Dibuja el marco antes de aplicar el giro de la hoja.
         for(var p:CitDoorGeometry.frame(b.width,b.height))CitGeometryRenderer.piece(p,pose,buffers,light);
         if(s.getValue(CitDoorBlock.OPEN)){
             double hinge=right?b.width-.12:.12;
@@ -21,6 +25,7 @@ public final class CitDoorRenderer implements BlockEntityRenderer<CitDoorEntity>
         for(var p:CitDoorGeometry.leaf(b.width,b.height,right))CitGeometryRenderer.piece(p,pose,buffers,light);
         if(!e.hasLabel()){pose.popPose();return;}
         String text="CIT-"+e.room();
+        // Ajusta el texto para que quepa en la altura disponible.
         float scale=Math.min(.042F,(b.height-.6F)/font.width(text));
         double centerX=right?b.width-.44:.44;
         for(boolean back:new boolean[]{false,true}){
@@ -34,6 +39,8 @@ public final class CitDoorRenderer implements BlockEntityRenderer<CitDoorEntity>
         }
         pose.popPose();
     }
+    // Permite dibujar piezas fuera de la celda principal.
     @Override public boolean shouldRenderOffScreen(CitDoorEntity e){return true;}
+    // Fija la distancia máxima de renderizado.
     @Override public int getViewDistance(){return 96;}
 }

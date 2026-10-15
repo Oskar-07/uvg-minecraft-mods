@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Shared opaque frame / lightly tinted glass rendering, without glass edge textures. */
 final class CitGeometryRenderer {
     private static final ResourceLocation WHITE=ResourceLocation.fromNamespaceAndPath("posted_signage","textures/block/cit_glass_panel_white.png");
+    // Dibuja una pieza opaca o transparente sin costuras.
     static void piece(CitDoorGeometry.Piece piece,PoseStack pose,MultiBufferSource buffers,int light){
         var b=piece.box();
         double[][] v={{b.minX,b.minY,b.minZ},{b.maxX,b.minY,b.minZ},{b.maxX,b.maxY,b.minZ},{b.minX,b.maxY,b.minZ},
