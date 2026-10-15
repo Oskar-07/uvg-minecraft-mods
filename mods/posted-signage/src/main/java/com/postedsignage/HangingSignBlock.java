@@ -31,6 +31,7 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
     private static final VoxelShape WEST_SHAPE = Block.box(5.25, 2.5, 6.25, 16.0, 13.5, 9.75);
     private static final VoxelShape EAST_SHAPE = Block.box(0.0, 2.5, 6.25, 10.75, 13.5, 9.75);
 
+    // Configura las propiedades iniciales del bloque.
     public HangingSignBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(GlassSignMount.GLASS_MOUNTED, false));
@@ -42,6 +43,7 @@ public final class HangingSignBlock extends HorizontalDirectionalBlock {
         return CODEC;
     }
 
+    // Calcula la orientación y comprueba la colocación.
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {

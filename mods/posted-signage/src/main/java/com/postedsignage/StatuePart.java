@@ -37,16 +37,19 @@ public enum StatuePart implements StringRepresentable {
     private final int column;
     private final int row;
 
+    // Asocia cada pieza con su nombre y posición en el mural.
     StatuePart(String serializedName, int column, int row) {
         this.serializedName = serializedName;
         this.column = column;
         this.row = row;
     }
 
+    // Devuelve la columna de esta pieza del mural.
     public int column() {
         return column;
     }
 
+    // Devuelve la fila de esta pieza del mural.
     public int row() {
         return row;
     }

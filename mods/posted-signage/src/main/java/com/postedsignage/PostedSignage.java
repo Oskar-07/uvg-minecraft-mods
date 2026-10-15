@@ -187,6 +187,7 @@ public final class PostedSignage {
                     })
                     .build());
 
+    // Conecta los registros y eventos del mod.
     public PostedSignage(IEventBus modEventBus, ModContainer modContainer) {
         // Legacy placed blocks stay compatible; retired inventory items resolve to the new clear doors.
         var oldDoor = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "glass_door");

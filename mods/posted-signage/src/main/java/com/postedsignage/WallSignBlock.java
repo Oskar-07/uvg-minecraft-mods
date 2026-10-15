@@ -28,6 +28,7 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
     private static final VoxelShape WEST_SHAPE = Block.box(15.5, 3.0, 3.0, 16.0, 13.0, 13.0);
     private static final VoxelShape EAST_SHAPE = Block.box(0.0, 3.0, 3.0, 0.5, 13.0, 13.0);
 
+    // Configura las propiedades iniciales del bloque.
     public WallSignBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(GlassSignMount.GLASS_MOUNTED, false));
@@ -39,6 +40,7 @@ public final class WallSignBlock extends HorizontalDirectionalBlock {
         return CODEC;
     }
 
+    // Calcula la orientación y comprueba la colocación.
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction clickedFace = context.getClickedFace();

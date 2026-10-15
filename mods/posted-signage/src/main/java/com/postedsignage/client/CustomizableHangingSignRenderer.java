@@ -21,6 +21,7 @@ public final class CustomizableHangingSignRenderer
 
     private final Font font;
 
+    // Crea el renderizador del cliente.
     public CustomizableHangingSignRenderer(BlockEntityRendererProvider.Context context) {
         this.font = context.getFont();
     }

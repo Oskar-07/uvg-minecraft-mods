@@ -16,6 +16,7 @@ public enum PlanterConnection implements StringRepresentable {
     @Nullable
     private final Direction direction;
 
+    // Asocia el nombre guardado con la dirección del vecino.
     PlanterConnection(String serializedName, @Nullable Direction direction) {
         this.serializedName = serializedName;
         this.direction = direction;

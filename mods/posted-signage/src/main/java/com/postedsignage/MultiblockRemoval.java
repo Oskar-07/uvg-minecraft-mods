@@ -10,8 +10,10 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** Remove companion cells without recursive shape updates evaluating their loot. */
 final class MultiblockRemoval {
+    // Evita crear instancias de esta clase de utilidades.
     private MultiblockRemoval() {}
 
+    // Retira las piezas compañeras sin duplicar objetos.
     static void beforePlayerBreak(Level level, BlockPos selected, BlockPos origin,
             Map<BlockPos, BlockState> parts, Player player) {
         if (level.isClientSide()) return;

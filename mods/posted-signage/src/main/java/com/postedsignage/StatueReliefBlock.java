@@ -34,6 +34,7 @@ public final class StatueReliefBlock extends HorizontalDirectionalBlock {
     private static final VoxelShape WEST_SHAPE = Block.box(15.5, 0.0, 0.0, 16.0, 16.0, 16.0);
     private static final VoxelShape EAST_SHAPE = Block.box(0.0, 0.0, 0.0, 0.5, 16.0, 16.0);
 
+    // Configura las propiedades iniciales del bloque.
     public StatueReliefBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any()
@@ -109,6 +110,7 @@ public final class StatueReliefBlock extends HorizontalDirectionalBlock {
         level.blockUpdated(pos, Blocks.AIR);
     }
 
+    // Calcula la posición de una pieza del mural.
     private static BlockPos partPosition(BlockPos anchor, Direction facing, StatuePart part) {
         // Increasing columns move toward the viewer's right while looking at
         // the outward-facing relief. The viewer looks opposite FACING.
@@ -141,6 +143,7 @@ public final class StatueReliefBlock extends HorizontalDirectionalBlock {
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
+    // Retira el mural completo con un único objeto recuperable.
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide()) {

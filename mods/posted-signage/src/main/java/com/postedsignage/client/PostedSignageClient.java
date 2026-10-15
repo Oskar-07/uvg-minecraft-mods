@@ -9,8 +9,10 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 /** Registers block-entity renderers only on the client; static block models are handled by Minecraft. */
 @EventBusSubscriber(modid = PostedSignage.MOD_ID, value = Dist.CLIENT)
 public final class PostedSignageClient {
+    // Evita crear instancias de esta clase de utilidades.
     private PostedSignageClient() {}
 
+    // Asocia cada menú con su pantalla de cliente.
     @SubscribeEvent
     public static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
         event.register(PostedSignage.TRASH_BIN_MENU.get(), TrashBinScreen::new);

@@ -36,6 +36,7 @@ public final class ConnectingPlanterBlock extends Block {
     private static final VoxelShape SOUTH_COLLISION = Block.box(2.0, 0.0, 2.0, 14.0, 7.0, 16.0);
     private static final VoxelShape WEST_COLLISION = Block.box(0.0, 0.0, 2.0, 14.0, 7.0, 14.0);
 
+    // Configura las propiedades iniciales del bloque.
     public ConnectingPlanterBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(CONNECTION, PlanterConnection.SINGLE));

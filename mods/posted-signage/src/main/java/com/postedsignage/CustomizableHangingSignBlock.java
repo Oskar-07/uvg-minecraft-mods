@@ -34,21 +34,25 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * independently editable vanilla sign text.
  */
 public final class CustomizableHangingSignBlock extends SignBlock {
+    // Abre la edición solo para operadores en Creativo.
     @Override public void openTextEdit(net.minecraft.world.entity.player.Player player,
             SignBlockEntity sign, boolean front) {
         if (CitAccess.canEditAt(player, sign.getBlockPos())) super.openTextEdit(player, sign, front);
     }
+    // Impide editar el texto sin permisos.
     @Override protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level,
             BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
         if (!CitAccess.canEditAt(player, pos)) return net.minecraft.world.InteractionResult.SUCCESS;
         return super.useWithoutItem(state, level, pos, player, hit);
     }
+    // Impide tintes, brillo y cera sin permisos.
     @Override protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack,
             BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
             net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         if (!CitAccess.canEditAt(player, pos)) return net.minecraft.world.ItemInteractionResult.SUCCESS;
         return super.useItemOn(stack, state, level, pos, player, hand, hit);
     }
+    // Programa la apertura del editor tras colocar el letrero.
     @Override public void setPlacedBy(Level level, BlockPos pos, BlockState state,
             net.minecraft.world.entity.LivingEntity placer, net.minecraft.world.item.ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
@@ -69,6 +73,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
     private static final VoxelShape WEST_SHAPE = Block.box(3.75, 4.5, 7.15, 16.0, 11.5, 8.85);
     private static final VoxelShape EAST_SHAPE = Block.box(0.0, 4.5, 7.15, 12.25, 11.5, 8.85);
 
+    // Configura las propiedades iniciales del bloque.
     public CustomizableHangingSignBlock(Properties properties) {
         super(WoodType.OAK, properties);
         registerDefaultState(stateDefinition.any()
@@ -133,6 +138,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
         return GlassSignMount.shape(shape,state,state.getValue(FACING));
     }
 
+    // Dibuja el panel JSON además del texto dinámico.
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         // BaseEntityBlock defaults to invisible because vanilla signs render
@@ -157,6 +163,7 @@ public final class CustomizableHangingSignBlock extends SignBlock {
                 facing.getStepZ() * 0.12).add(GlassSignMount.offset(state,facing));
     }
 
+    // Crea los datos asociados al bloque colocado.
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new CustomizableHangingSignBlockEntity(pos, state);
