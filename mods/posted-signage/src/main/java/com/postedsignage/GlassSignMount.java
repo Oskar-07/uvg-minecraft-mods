@@ -34,6 +34,12 @@ public final class GlassSignMount {
     public static Vec3 offset(BlockState state,Direction facing){
         return state.getValue(GLASS_MOUNTED)?new Vec3(-facing.getStepX()*INSET,0,-facing.getStepZ()*INSET):Vec3.ZERO;
     }
+    // Conserva ambas caras al mirar al ras del tablero.
+    public static boolean textFaceVisible(Direction facing, boolean back, double relativeX, double relativeZ){
+        var normal=facing.getClockWise();
+        double side=relativeX*normal.getStepX()+relativeZ*normal.getStepZ();
+        return back?side<=.055001:side>=-.055001;
+    }
     // Desplaza la selección junto con el letrero.
     public static VoxelShape shape(VoxelShape shape,BlockState state,Direction facing){
         var delta=offset(state,facing);return shape.move(delta.x,delta.y,delta.z);
