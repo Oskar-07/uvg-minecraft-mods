@@ -1,6 +1,7 @@
 package gt.edu.uvg.universityguide.entity;
 
 import com.mojang.authlib.GameProfile;
+import gt.edu.uvg.universityguide.entity.navigation.*;
 import com.mojang.serialization.DataResult;
 import gt.edu.uvg.universityguide.block.entity.TourStopBlockEntity;
 import gt.edu.uvg.universityguide.data.TourStopSavedData;
@@ -74,6 +75,7 @@ public final class GuideEntity extends PathfinderMob {
     // Inicializa los datos de esta entidad.
     public GuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
+        moveControl = new GuideMoveControl(this);
         setPersistenceRequired();
         setInvulnerable(true);
         if (getNavigation() instanceof GroundPathNavigation groundNavigation) {
@@ -88,6 +90,7 @@ public final class GuideEntity extends PathfinderMob {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.28)
+                .add(Attributes.STEP_HEIGHT, 0.6)
                 .add(Attributes.FOLLOW_RANGE, 256.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
     }
@@ -95,7 +98,7 @@ public final class GuideEntity extends PathfinderMob {
     /** Door-capable ground navigation lets the guide follow campus routes through wooden doors. */
     @Override
     protected PathNavigation createNavigation(Level level) {
-        GroundPathNavigation navigation = new GroundPathNavigation(this, level);
+        GroundPathNavigation navigation = new GuideNavigation(this, level);
         navigation.setCanOpenDoors(true);
         navigation.setCanPassDoors(true);
         navigation.setCanFloat(false);
@@ -267,6 +270,13 @@ public final class GuideEntity extends PathfinderMob {
             return;
         }
 
+        // Una barrera sobre el guía pausa el recorrido sin agotar reintentos.
+        if (GuideRouteRules.blocked(level(), getBoundingBox())) {
+            getNavigation().stop();
+            setDeltaMovement(0, getDeltaMovement().y, 0);
+            return;
+        }
+
         if (!hasParticipantInDimension(serverLevel)) {
             noParticipantTicks++;
             getNavigation().stop();
@@ -291,20 +301,23 @@ public final class GuideEntity extends PathfinderMob {
             requestPath();
         }
 
-        if (distanceToSqr(Vec3.atCenterOf(targetPos)) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE) {
+        if (distanceToSqr(Vec3.atCenterOf(targetPos)) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE
+                && GuideRouteRules.canTraverse(level(), position(), Vec3.atBottomCenterOf(targetPos), getBbWidth(), getBbHeight())) {
             arrive(stop);
             return;
         }
 
         stalledPathTicks++;
-        if (position().distanceToSqr(lastProgressPosition) >= 0.25) {
+        // Rebotar verticalmente en un escalón no reinicia el detector de atasco.
+        if (position().subtract(lastProgressPosition).horizontalDistanceSqr() >= 0.25) {
             lastProgressPosition = position();
             stalledPathTicks = 0;
             pathRetries = 0;
         }
 
         if (stalledPathTicks > 0
-                && stalledPathTicks % PATH_RETRY_INTERVAL_TICKS == 0
+                && (stalledPathTicks % PATH_RETRY_INTERVAL_TICKS == 0
+                    || (getNavigation().isDone() && stalledPathTicks==10))
                 && pathRetries < MAX_PATH_RETRIES) {
             pathRetries++;
             requestPath();
@@ -327,14 +340,27 @@ public final class GuideEntity extends PathfinderMob {
                 && stop.getStopId().equals(targetStopId) ? stop : null;
     }
 
+    // Recalcula al editar barreras, conservando destino y participantes.
+    public void routeChanged(BlockPos changed) {
+        if (getTourState() == TourState.IDLE) return;
+        if (!getNavigation().isDone() && !getNavigation().shouldRecomputePath(changed)
+                && !getBoundingBox().intersects(new net.minecraft.world.phys.AABB(changed))) return;
+        getNavigation().stop();
+        setDeltaMovement(0, getDeltaMovement().y, 0);
+        stalledPathTicks = 0;
+        pathRetries = 0;
+        lastProgressPosition = position();
+        if (getTourState() == TourState.WALKING && !GuideRouteRules.blocked(level(), getBoundingBox())) requestPath();
+    }
+
     /** Aim at the center of the destination cell, with feet at its base rather than its vertical center. */
     private boolean requestPath() {
-        return targetPos != null && getNavigation().moveTo(
-                targetPos.getX() + 0.5,
-                targetPos.getY(),
-                targetPos.getZ() + 0.5,
-                1.0
-        );
+        if (targetPos == null) return false;
+        var path = getNavigation().createPath(targetPos, 0);
+        // No avanza por rutas parciales que terminan ante una barrera.
+        if (path == null || !path.canReach()) { getNavigation().stop(); return false; }
+        // El multiplicador también se aplica a guías existentes con atributos guardados.
+        return getNavigation().moveTo(path, 1.10);
     }
 
     /** Dimension presence controls the abandonment timer; it is distinct from following distance. */
