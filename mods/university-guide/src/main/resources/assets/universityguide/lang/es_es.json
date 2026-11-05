@@ -28,5 +28,7 @@
   "command.universityguide.marker_given": "Recibiste una parada de tour.",
   "command.universityguide.guide_not_found": "No se encontró ese guía. Usa nearest o su UUID.",
   "command.universityguide.removed": "Se eliminó el guía %s.",
-  "command.universityguide.cancelled": "Se canceló el recorrido de %s."
+  "command.universityguide.cancelled": "Se canceló el recorrido de %s.",
+  "block.universityguide.guide_barrier": "Barrera para guías",
+  "command.universityguide.barrier_given": "Barrera para guías añadida al inventario."
 }

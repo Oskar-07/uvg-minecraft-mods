@@ -28,5 +28,7 @@
   "command.universityguide.marker_given": "You received a tour stop.",
   "command.universityguide.guide_not_found": "Guide not found. Use nearest or its UUID.",
   "command.universityguide.removed": "Removed guide %s.",
-  "command.universityguide.cancelled": "Cancelled %s's tour."
+  "command.universityguide.cancelled": "Cancelled %s's tour.",
+  "block.universityguide.guide_barrier": "Guide Barrier",
+  "command.universityguide.barrier_given": "Guide barrier added to inventory."
 }

@@ -1,0 +1,5 @@
+Presentación de la interfaz
+
+Oskar: mostrar la lista de destinos y explicar que el servidor valida la selección, la distancia y la existencia de la parada. La descripción completa se presenta al llegar. Revisar transparencia de vidrio y lectura de letreros desde ambos lados.
+
+Pendiente del alcance inicial: descripción breve en la lista, lobby con instrucciones y creación del guía al confirmar la selección. El guía actual se configura por operador y se reutiliza. No presentar estos tres puntos como terminados.

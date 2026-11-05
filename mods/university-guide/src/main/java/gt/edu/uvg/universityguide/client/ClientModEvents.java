@@ -4,6 +4,7 @@ import gt.edu.uvg.universityguide.ModContent;
 import gt.edu.uvg.universityguide.UniversityGuideMod;
 import gt.edu.uvg.universityguide.client.renderer.GuideRenderer;
 import gt.edu.uvg.universityguide.client.renderer.TourStopRenderer;
+import gt.edu.uvg.universityguide.client.renderer.GuideBarrierRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -19,6 +20,7 @@ public final class ClientModEvents {
     /** Bind each registered entity type to its client renderer during renderer setup. */
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ModContent.GUIDE_BARRIER_ENTITY.get(), GuideBarrierRenderer::new);
         event.registerEntityRenderer(ModContent.GUIDE.get(), GuideRenderer::new);
         event.registerBlockEntityRenderer(ModContent.TOUR_STOP_ENTITY.get(), TourStopRenderer::new);
     }
