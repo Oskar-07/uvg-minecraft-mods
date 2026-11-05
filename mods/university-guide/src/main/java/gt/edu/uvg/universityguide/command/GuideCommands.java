@@ -40,6 +40,8 @@ public final class GuideCommands {
                         .then(Commands.literal("remove")
                                 .then(Commands.argument("target", StringArgumentType.word())
                                         .executes(context -> affectGuide(context, true)))))
+                .then(Commands.literal("barrier")
+                        .then(Commands.literal("give").executes(GuideCommands::giveBarrier)))
                 .then(Commands.literal("marker")
                         .then(Commands.literal("give").executes(GuideCommands::giveMarker))));
     }
@@ -85,6 +87,19 @@ public final class GuideCommands {
             player.drop(marker, false);
         }
         context.getSource().sendSuccess(() -> Component.translatable("command.universityguide.marker_given"), false);
+        return 1;
+    }
+
+    // Entrega la barrera únicamente a operadores en Creativo.
+    private static int giveBarrier(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        if (!gt.edu.uvg.universityguide.block.GuideBarrierBlock.canEdit(player)) {
+            context.getSource().sendFailure(Component.translatable("command.universityguide.creative_required"));
+            return 0;
+        }
+        ItemStack item = new ItemStack(ModContent.GUIDE_BARRIER_ITEM.get());
+        if (!player.addItem(item)) player.drop(item, false);
+        context.getSource().sendSuccess(() -> Component.translatable("command.universityguide.barrier_given"), false);
         return 1;
     }
 
