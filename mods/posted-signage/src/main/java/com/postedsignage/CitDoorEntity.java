@@ -26,6 +26,22 @@ public final class CitDoorEntity extends BlockEntity {
     private int color=3;
     private UUID editor,token;
     private long expires;
+    private BlockState boundsState;
+    private AABB renderBounds;
+    private BlockState leafState;
+    private Map<BlockPos,VoxelShape> openLeaf,closedLeaf;
+    private final Map<BlockPos,VoxelShape> collisionCells=new HashMap<>();
+    // El estado cambia al girar la hoja; la caja se conserva entre fotogramas.
+    public AABB renderBounds(){
+        var s=getBlockState();
+        if(s!=boundsState){
+            var block=(CitDoorBlock)s.getBlock();
+            renderBounds=CitDoorGeometry.renderBounds(worldPosition,s.getValue(CitDoorBlock.FACING),block.width,block.height,
+                    s.getValue(CitDoorBlock.RIGHT),s.getValue(CitDoorBlock.OPEN));
+            boundsState=s;
+        }
+        return renderBounds;
+    }
     boolean changing,removing;
     // Inicializa los datos de esta entidad.
     public CitDoorEntity(BlockPos p,BlockState s){super(PostedSignage.CIT_DOOR_ENTITY.get(),p,s);}
@@ -43,14 +59,23 @@ public final class CitDoorEntity extends BlockEntity {
     public static boolean validRoom(String value){return value!=null&&value.matches("[0-9]{1,4}[A-Z]?");}
     // Localiza el controlador desde el marco o la hoja.
     public static CitDoorEntity find(BlockGetter l,BlockPos p){
+        if(l instanceof net.minecraft.server.level.ServerLevel server&&server.getChunkSource().getChunkNow(p.getX()>>4,p.getZ()>>4)==null)return null;
         BlockState s=l.getBlockState(p);
         if(s.getBlock() instanceof CitDoorBlock) {
             BlockPos root=CitDoorBlock.rootPos(p,s);
-            return l.getBlockEntity(root) instanceof CitDoorEntity e?e:null;
+            return loadedEntity(l,root) instanceof CitDoorEntity e?e:null;
         }
-        if(l.getBlockEntity(p) instanceof CitSwingEntity e&&e.owner()!=null)
-            return l.getBlockEntity(e.owner()) instanceof CitDoorEntity root?root:null;
+        if(loadedEntity(l,p) instanceof CitSwingEntity e&&e.owner()!=null)
+            return loadedEntity(l,e.owner()) instanceof CitDoorEntity root?root:null;
         return null;
+    }
+    // Nunca carga un chunk del controlador desde una consulta de forma o de luz.
+    private static BlockEntity loadedEntity(BlockGetter level,BlockPos pos){
+        if(level instanceof net.minecraft.server.level.ServerLevel server){
+            var chunk=server.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4);
+            return chunk==null?null:chunk.getBlockEntity(pos);
+        }
+        return level.getBlockEntity(pos);
     }
     // Enumera las celdas del marco fijo.
     public Set<BlockPos> frameCells(){
@@ -61,7 +86,21 @@ public final class CitDoorEntity extends BlockEntity {
     // Divide la hoja en colisiones por celda.
     public Map<BlockPos,VoxelShape> leafCells(boolean open){
         var s=getBlockState();var b=(CitDoorBlock)s.getBlock();
-        return CitDoorGeometry.leafCells(worldPosition,s.getValue(CitDoorBlock.FACING),b.width,b.height,s.getValue(CitDoorBlock.RIGHT),open);
+        // La hoja no cambia entre consultas de navegación, colisión y dibujo.
+        if(leafState!=s){leafState=s;openLeaf=null;closedLeaf=null;collisionCells.clear();}
+        if(open){
+            if(openLeaf==null)openLeaf=Map.copyOf(CitDoorGeometry.leafCells(worldPosition,s.getValue(CitDoorBlock.FACING),b.width,b.height,s.getValue(CitDoorBlock.RIGHT),true));
+            return openLeaf;
+        }
+        if(closedLeaf==null)closedLeaf=Map.copyOf(CitDoorGeometry.leafCells(worldPosition,s.getValue(CitDoorBlock.FACING),b.width,b.height,s.getValue(CitDoorBlock.RIGHT),false));
+        return closedLeaf;
+    }
+    // Hasta seis celdas por marco; el estado nuevo descarta toda colisión anterior.
+    public VoxelShape shapeAt(BlockPos pos){
+        var state=getBlockState();var block=(CitDoorBlock)state.getBlock();var leaf=leafCells(state.getValue(CitDoorBlock.OPEN));
+        return collisionCells.computeIfAbsent(pos.immutable(),p->Shapes.or(
+                CitDoorGeometry.frameShape(worldPosition,p,state.getValue(CitDoorBlock.FACING),block.width,block.height),
+                leaf.getOrDefault(p,Shapes.empty())));
     }
     // Comprueba que la celda móvil pertenece a esta puerta.
     private boolean ownsProxy(BlockPos p){return level.getBlockEntity(p) instanceof CitSwingEntity e&&worldPosition.equals(e.owner());}
@@ -75,15 +114,33 @@ public final class CitDoorEntity extends BlockEntity {
     public boolean toggle(Player player){
         if(level==null||level.isClientSide||!isRoot()||player.isSpectator()||player.distanceToSqr(worldPosition.getCenter())>64)return false;
         boolean open=!getBlockState().getValue(CitDoorBlock.OPEN);
+        return moveLeaf(open,player);
+    }
+    // Consulta solo bloques; las entidades se comprueban al abrir de verdad.
+    public boolean canOpenForNavigation(){return canMoveLeaf(true,null,false);}
+    // El guía abre la misma hoja, sin editar etiquetas ni ignorar obstáculos.
+    public boolean openForGuide(net.minecraft.world.entity.Mob guide){
+        if(level==null||level.isClientSide||guide.level()!=level||!isRoot()
+                ||!net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(guide.getType()).toString().equals("universityguide:guide")
+                ||guide.distanceToSqr(worldPosition.getCenter())>16)return false;
+        return getBlockState().getValue(CitDoorBlock.OPEN)||moveLeaf(true,null);
+    }
+    private boolean canMoveLeaf(boolean open,Player player,boolean entities){
+        if(level==null||!isRoot())return false;
         var frames=frameCells();var target=leafCells(open);
-        for(BlockPos p:frames)if(!ownsFrame(p)||!level.mayInteract(player,p))return false;
+        for(BlockPos p:frames)if(!ownsFrame(p)||(player!=null&&!level.mayInteract(player,p)))return false;
         // Valida todas las celdas antes de modificar el mundo.
         for(var entry:target.entrySet()) {
             BlockPos p=entry.getKey();
-            if(!level.hasChunkAt(p)||!level.isInWorldBounds(p)||!level.getWorldBorder().isWithinBounds(p)||!level.mayInteract(player,p)
+            if(!level.hasChunkAt(p)||!level.isInWorldBounds(p)||!level.getWorldBorder().isWithinBounds(p)||(player!=null&&!level.mayInteract(player,p))
                     ||(!frames.contains(p)&&!ownsProxy(p)&&!level.isEmptyBlock(p))
-                    ||!level.isUnobstructed(null,entry.getValue().move(p.getX(),p.getY(),p.getZ())))return false;
+                    ||(entities&&!level.isUnobstructed(null,entry.getValue().move(p.getX(),p.getY(),p.getZ()))))return false;
         }
+        return true;
+    }
+    private boolean moveLeaf(boolean open,Player player){
+        if(!canMoveLeaf(open,player,true))return false;
+        var frames=frameCells();var target=leafCells(open);
         // Evita desmontajes recursivos durante el movimiento.
         changing=true;
         try {

@@ -80,6 +80,11 @@ public final class CitDoorBlock extends BaseEntityBlock {
     // Devuelve los límites de selección y colisión.
     @Override protected VoxelShape getShape(BlockState s,BlockGetter l,BlockPos p,CollisionContext c){
         BlockPos root=rootPos(p,s);
+        // No reconstruye la hoja completa en cada consulta de una de sus piezas.
+        if(l.getBlockEntity(root) instanceof CitDoorEntity door&&door.getBlockState().is(s.getBlock())
+                &&door.getBlockState().getValue(OPEN).equals(s.getValue(OPEN))
+                &&door.getBlockState().getValue(FACING)==s.getValue(FACING)
+                &&door.getBlockState().getValue(RIGHT).equals(s.getValue(RIGHT)))return door.shapeAt(p);
         VoxelShape shape=CitDoorGeometry.frameShape(root,p,s.getValue(FACING),width,height);
         return Shapes.or(shape,CitDoorGeometry.leafCells(root,s.getValue(FACING),width,height,s.getValue(RIGHT),s.getValue(OPEN)).getOrDefault(p,Shapes.empty()));
     }
@@ -94,5 +99,8 @@ public final class CitDoorBlock extends BaseEntityBlock {
         super.onRemove(s,l,p,next,moving);
     }
     // Elige cómo se dibuja el bloque.
-    @Override protected RenderShape getRenderShape(BlockState s){return RenderShape.ENTITYBLOCK_ANIMATED;}
+    @Override protected RenderShape getRenderShape(BlockState s){return RenderShape.MODEL;}
+    // El hilo de luz no necesita consultar el controlador ni cargar chunks vecinos.
+    @Override protected boolean propagatesSkylightDown(BlockState s,BlockGetter level,BlockPos pos){return true;}
+    @Override protected int getLightBlock(BlockState s,BlockGetter level,BlockPos pos){return 0;}
 }
