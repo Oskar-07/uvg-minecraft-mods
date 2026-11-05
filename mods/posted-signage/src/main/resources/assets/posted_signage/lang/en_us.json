@@ -39,12 +39,12 @@
   "block.posted_signage.smooth_quartz_vertical_slab": "Smooth Quartz Vertical Slab",
   "block.posted_signage.texture_cover": "Texture Cover",
   "item.posted_signage.texture_applicator": "Texture Applicator",
-  "tooltip.posted_signage.texture_applicator": "Shift + right-click: sample a face. Right-click: apply. Break cover: remove.",
+  "tooltip.posted_signage.texture_applicator": "Shift + right-click: sample a face. Right-click: apply. Break the painted block: remove.",
   "tooltip.posted_signage.sample": "Selected: %s (%s)",
   "message.posted_signage.sampled": "Selected texture: %s",
   "message.posted_signage.select_first": "Shift + right-click a block face to select its texture first.",
   "message.posted_signage.invalid_sample": "Select a block with a regular block model.",
-  "message.posted_signage.no_space": "This needs a solid face with an empty neighboring space.",
+  "message.posted_signage.no_space": "Select a block face to paint.",
   "block.posted_signage.trash_bin": "Trash Bin",
   "item.posted_signage.trash_bin": "Trash Bin",
   "block.posted_signage.wide_glass_door": "Wide Glass Door",
@@ -63,5 +63,12 @@
   "screen.posted_signage.cit_door": "Door room code and color",
   "screen.posted_signage.room_number": "Room number",
   "block.posted_signage.clear_short_door_test": "Clear Short Door (No Text)",
-  "block.posted_signage.clear_wide_door_test": "Clear Wide Door (No Text)"
+  "block.posted_signage.clear_wide_door_test": "Clear Wide Door (No Text)",
+  "block.posted_signage.wall_tv": "Wall TV (black screen)",
+  "block.posted_signage.elevator_door": "Elevator Doors",
+  "block.posted_signage.elevator_buttons": "Elevator Call Buttons",
+  "block.posted_signage.fire_hose_cabinet": "Fire Hose and Extinguisher Cabinet",
+  "block.posted_signage.campus_rules_poster": "Campus Rules Poster",
+  "message.posted_signage.elevator_missing": "No nearby elevator door.",
+  "message.posted_signage.elevator_blocked": "The doorway is occupied."
 }
