@@ -1,6 +1,8 @@
 package gt.edu.uvg.universityguide;
 
 import gt.edu.uvg.universityguide.block.TourStopBlock;
+import gt.edu.uvg.universityguide.block.GuideBarrierBlock;
+import gt.edu.uvg.universityguide.block.entity.GuideBarrierBlockEntity;
 import gt.edu.uvg.universityguide.block.entity.TourStopBlockEntity;
 import gt.edu.uvg.universityguide.entity.GuideEntity;
 import net.minecraft.core.registries.Registries;
@@ -46,6 +48,15 @@ public final class ModContent {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TourStopBlockEntity>> TOUR_STOP_ENTITY =
             BLOCK_ENTITY_TYPES.register("tour_stop", () ->
                     BlockEntityType.Builder.of(TourStopBlockEntity::new, TOUR_STOP.get()).build(null));
+
+    // Barrera administrativa: persiste sin colisión ni objetos al romperla.
+    public static final DeferredBlock<GuideBarrierBlock> GUIDE_BARRIER = BLOCKS.registerBlock(
+            "guide_barrier", GuideBarrierBlock::new, BlockBehaviour.Properties.of()
+                    .strength(-1.0F, 3_600_000.0F).noCollission().noOcclusion().noLootTable()
+                    .noTerrainParticles().pushReaction(PushReaction.BLOCK));
+    public static final DeferredItem<BlockItem> GUIDE_BARRIER_ITEM = ITEMS.registerSimpleBlockItem("guide_barrier", GUIDE_BARRIER);
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GuideBarrierBlockEntity>> GUIDE_BARRIER_ENTITY =
+            BLOCK_ENTITY_TYPES.register("guide_barrier", () -> BlockEntityType.Builder.of(GuideBarrierBlockEntity::new, GUIDE_BARRIER.get()).build(null));
 
     public static final DeferredHolder<EntityType<?>, EntityType<GuideEntity>> GUIDE =
             ENTITY_TYPES.register("guide", () -> EntityType.Builder
